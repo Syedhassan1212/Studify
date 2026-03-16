@@ -39,15 +39,25 @@ export default function NoteSummarizer({ topicId }: { topicId: string }) {
       if (!response.ok) {
         throw new Error(data?.error ?? "Failed to summarize notes.");
       }
+      let finalSummary: Summary | null = null;
       if (data?.raw) {
         try {
           const parsed = JSON.parse(data.raw);
-          setSummary(parsed);
+          finalSummary = parsed;
         } catch {
-          setSummary({ raw: data.raw });
+          finalSummary = { raw: data.raw };
         }
       } else {
-        setSummary(data);
+        finalSummary = data;
+      }
+      setSummary(finalSummary);
+
+      if (finalSummary) {
+        await fetch("/api/summaries/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ topicId, summary: finalSummary }),
+        });
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to summarize notes.");

@@ -12,6 +12,9 @@ export async function POST(request: Request) {
   if (!question) {
     return NextResponse.json({ error: "Question is required." }, { status: 400 });
   }
+  if (!topicId) {
+    return NextResponse.json({ error: "topicId is required." }, { status: 400 });
+  }
 
   const { context, chunks } = await retrieveContext({ query: question, topicId });
   let extraNotes = "";

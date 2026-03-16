@@ -67,6 +67,17 @@ export default function QuizGenerator({
         throw new Error("No quiz questions returned. Try again.");
       }
       setQuestions(items);
+
+      const saveResponse = await fetch("/api/quizzes/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topicId, questions: items }),
+      });
+      if (!saveResponse.ok) {
+        const saveData = await saveResponse.json();
+        throw new Error(saveData?.error ?? "Failed to save quiz.");
+      }
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to generate quiz.");
     } finally {
@@ -143,7 +154,7 @@ export default function QuizGenerator({
             disabled={loading}
             className="rounded-full border border-[color:var(--accent)] px-3 py-1 text-xs font-semibold text-[color:var(--accent)]"
           >
-            Save quiz
+            Save again
           </button>
         ) : null}
       </div>

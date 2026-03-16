@@ -56,6 +56,17 @@ export default function FlashcardGenerator({
         throw new Error("No flashcards returned. Add notes and try again.");
       }
       setFlashcards(cards);
+
+      const saveResponse = await fetch("/api/flashcards/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topicId, flashcards: cards }),
+      });
+      if (!saveResponse.ok) {
+        const saveData = await saveResponse.json();
+        throw new Error(saveData?.error ?? "Failed to save flashcards.");
+      }
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to generate flashcards.");
     } finally {
@@ -114,7 +125,7 @@ export default function FlashcardGenerator({
             disabled={loading}
             className="rounded-full border border-[color:var(--accent)] px-3 py-1 text-xs font-semibold text-[color:var(--accent)]"
           >
-            Save to topic
+            Save again
           </button>
         ) : null}
       </div>
