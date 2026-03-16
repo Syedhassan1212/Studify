@@ -60,6 +60,7 @@ export async function embedGeminiText(input: string) {
           role: "user",
           parts: [{ text: input }],
         },
+        outputDimensionality: env.geminiEmbeddingDim,
       }),
     },
   );

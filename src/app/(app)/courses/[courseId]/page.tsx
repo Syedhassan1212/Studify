@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
 import TopicForm from "./topic-form";
@@ -8,8 +8,9 @@ import KnowledgeGraph from "@/components/graph/knowledge-graph";
 export default async function CourseDetailPage({
   params,
 }: {
-  params: { courseId: string };
+  params: Promise<{ courseId: string }>;
 }) {
+  const { courseId } = await params;
   const supabase = await supabaseServer();
   const {
     data: { user },
@@ -22,7 +23,7 @@ export default async function CourseDetailPage({
   const { data: course } = await supabase
     .from("courses")
     .select("id,name,description")
-    .eq("id", params.courseId)
+    .eq("id", courseId)
     .single();
 
   let resolvedCourse = course;
@@ -31,17 +32,54 @@ export default async function CourseDetailPage({
     const { data: adminCourse } = await admin
       .from("courses")
       .select("id,name,description,user_id")
-      .eq("id", params.courseId)
+      .eq("id", courseId)
       .single();
 
-    if (!adminCourse || adminCourse.user_id !== user.id) {
-      notFound();
+    if (adminCourse && adminCourse.user_id === user.id) {
+      resolvedCourse = {
+        id: adminCourse.id,
+        name: adminCourse.name,
+        description: adminCourse.description,
+      };
     }
-    resolvedCourse = {
-      id: adminCourse.id,
-      name: adminCourse.name,
-      description: adminCourse.description,
-    };
+  }
+
+  if (!resolvedCourse) {
+    const { data: userCourses } = await supabase
+      .from("courses")
+      .select("id,name,description")
+      .order("created_at", { ascending: false });
+
+    return (
+      <div className="flex flex-col gap-6">
+        <header>
+          <p className="text-xs uppercase tracking-[0.32em] text-[var(--muted)]">Course</p>
+          <h2 className="text-3xl font-semibold">Course not found</h2>
+          <p className="mt-2 text-sm text-[var(--muted)]">
+            We couldn&apos;t load that course. Pick one below.
+          </p>
+        </header>
+        <div className="app-surface rounded-[32px] p-6">
+          <div className="grid gap-3">
+            {(userCourses ?? []).length === 0 ? (
+              <div className="rounded-2xl bg-white p-4 text-sm text-[var(--muted)]">
+                No courses yet. Create one from the Courses page.
+              </div>
+            ) : (
+              (userCourses ?? []).map((item) => (
+                <Link
+                  key={item.id}
+                  href={`/courses/${item.id}`}
+                  className="rounded-2xl bg-white p-4 text-sm font-semibold text-[var(--ink)]"
+                >
+                  {item.name}
+                </Link>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const { data: topics } = await supabase

@@ -13,14 +13,15 @@ import { supabaseServer } from "@/lib/supabase/server";
 export default async function TopicWorkspacePage({
   params,
 }: {
-  params: { courseId: string; topicId: string };
+  params: Promise<{ courseId: string; topicId: string }>;
 }) {
+  const { courseId, topicId } = await params;
   const supabase = await supabaseServer();
   const { data: topic } = await supabase
     .from("topics")
     .select("id,title,course_id")
-    .eq("id", params.topicId)
-    .eq("course_id", params.courseId)
+    .eq("id", topicId)
+    .eq("course_id", courseId)
     .single();
 
   if (!topic) {
@@ -61,7 +62,7 @@ export default async function TopicWorkspacePage({
               <CardTitle>Materials</CardTitle>
             </CardHeader>
             <CardBody>
-              <MaterialUploadForm courseId={params.courseId} topicId={topic.id} />
+              <MaterialUploadForm courseId={courseId} topicId={topic.id} />
               <div className="mt-4 grid gap-3 text-sm">
                 {(materials ?? []).length === 0 ? (
                   <div className="rounded-2xl bg-white p-3 text-xs text-[var(--muted)]">
@@ -87,7 +88,7 @@ export default async function TopicWorkspacePage({
             </CardHeader>
             <CardBody>
               <NoteForm
-                courseId={params.courseId}
+                courseId={courseId}
                 topicId={topic.id}
                 initialContent={initialContent}
               />
@@ -125,7 +126,7 @@ export default async function TopicWorkspacePage({
                       <p className="font-semibold">{card.front}</p>
                       <p className="text-xs text-[var(--muted)]">Tap to reveal answer</p>
                       <FlashcardReview
-                        courseId={params.courseId}
+                        courseId={courseId}
                         topicId={topic.id}
                         flashcardId={card.id}
                       />
@@ -142,7 +143,7 @@ export default async function TopicWorkspacePage({
             </CardHeader>
             <CardBody>
               <QuizGenerator topicId={topic.id} topicTitle={topic.title} />
-              <QuizResultForm courseId={params.courseId} topicId={topic.id} quizzes={quizzes ?? []} />
+              <QuizResultForm courseId={courseId} topicId={topic.id} quizzes={quizzes ?? []} />
               <div className="mt-4 grid gap-2 text-sm">
                 {(quizzes ?? []).length === 0 ? (
                   <div className="rounded-2xl bg-white p-3 text-xs text-[var(--muted)]">
