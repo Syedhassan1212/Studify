@@ -61,7 +61,7 @@ export default async function TopicWorkspacePage({
 
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         <div className="flex flex-col gap-6">
-          <Card>
+          <Card id="materials" className="scroll-mt-24">
             <CardHeader>
               <CardTitle>Materials</CardTitle>
             </CardHeader>
@@ -95,7 +95,7 @@ export default async function TopicWorkspacePage({
             </CardBody>
           </Card>
 
-          <Card>
+          <Card id="notes" className="scroll-mt-24">
             <CardHeader>
               <CardTitle>Notes Studio</CardTitle>
               <form action={importLatestMaterialToNotes}>
@@ -120,7 +120,7 @@ export default async function TopicWorkspacePage({
         </div>
 
         <div className="flex flex-col gap-6">
-          <Card>
+          <Card id="ai" className="scroll-mt-24">
             <CardHeader>
               <CardTitle>AI Assistant</CardTitle>
             </CardHeader>
@@ -129,7 +129,7 @@ export default async function TopicWorkspacePage({
             </CardBody>
           </Card>
 
-          <Card>
+          <Card id="flashcards" className="scroll-mt-24">
             <CardHeader>
               <CardTitle>Flashcards</CardTitle>
             </CardHeader>
@@ -157,7 +157,7 @@ export default async function TopicWorkspacePage({
             </CardBody>
           </Card>
 
-          <Card>
+          <Card id="quizzes" className="scroll-mt-24">
             <CardHeader>
               <CardTitle>Quizzes</CardTitle>
             </CardHeader>

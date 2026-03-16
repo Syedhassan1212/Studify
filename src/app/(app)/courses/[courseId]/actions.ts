@@ -28,3 +28,22 @@ export async function createTopic(_: unknown, formData: FormData) {
   revalidatePath(`/courses/${courseId}`);
   return { success: true };
 }
+
+export async function deleteTopic(_: unknown, formData: FormData) {
+  const courseId = String(formData.get("courseId") ?? "");
+  const topicId = String(formData.get("topicId") ?? "");
+
+  if (!courseId || !topicId) {
+    return { error: "Course and topic are required." };
+  }
+
+  const supabase = await supabaseServer();
+  const { error } = await supabase.from("topics").delete().eq("id", topicId);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath(`/courses/${courseId}`);
+  return { success: true };
+}

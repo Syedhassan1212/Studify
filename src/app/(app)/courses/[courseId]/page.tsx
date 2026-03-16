@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
 import TopicForm from "./topic-form";
+import { deleteTopic } from "./actions";
 import KnowledgeGraph from "@/components/graph/knowledge-graph";
 
 export default async function CourseDetailPage({
@@ -116,13 +117,27 @@ export default async function CourseDetailPage({
             </div>
           ) : (
             (topics ?? []).map((topic) => (
-              <Link
+              <div
                 key={topic.id}
-                href={`/courses/${course.id}/topics/${topic.id}`}
-                className="rounded-2xl bg-white p-4 text-sm font-semibold text-[var(--ink)]"
+                className="flex items-center justify-between gap-3 rounded-2xl bg-white p-4"
               >
-                {topic.title}
-              </Link>
+                <Link
+                  href={`/courses/${resolvedCourse.id}/topics/${topic.id}`}
+                  className="text-sm font-semibold text-[var(--ink)] hover:underline"
+                >
+                  {topic.title}
+                </Link>
+                <form action={deleteTopic}>
+                  <input type="hidden" name="courseId" value={resolvedCourse.id} />
+                  <input type="hidden" name="topicId" value={topic.id} />
+                  <button
+                    type="submit"
+                    className="rounded-full border border-rose-200 px-3 py-1 text-xs font-semibold text-rose-600"
+                  >
+                    Delete
+                  </button>
+                </form>
+              </div>
             ))
           )}
         </div>

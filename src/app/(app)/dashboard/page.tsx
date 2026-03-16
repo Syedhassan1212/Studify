@@ -98,9 +98,12 @@ export default async function DashboardPage() {
         <Card className="animate-rise">
           <CardHeader>
             <CardTitle>Courses Overview</CardTitle>
-            <button className="rounded-full border border-[color:var(--accent)] px-3 py-1 text-xs font-semibold text-[color:var(--accent)]">
+            <Link
+              href="/courses"
+              className="rounded-full border border-[color:var(--accent)] px-3 py-1 text-xs font-semibold text-[color:var(--accent)]"
+            >
               View all
-            </button>
+            </Link>
           </CardHeader>
           <CardBody>
             <div className="grid gap-4">
@@ -110,7 +113,11 @@ export default async function DashboardPage() {
                 </div>
               ) : (
                 courses.map((course) => (
-                  <div key={course.id} className="rounded-2xl bg-white p-4">
+                  <Link
+                    key={course.id}
+                    href={`/courses/${course.id}`}
+                    className="rounded-2xl bg-white p-4 transition hover:shadow-sm"
+                  >
                     <div className="flex items-center justify-between gap-4">
                       <div>
                         <p className="text-lg font-semibold">{course.name}</p>
@@ -130,7 +137,7 @@ export default async function DashboardPage() {
                         <span>{course.nextReview}</span>
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 ))
               )}
             </div>

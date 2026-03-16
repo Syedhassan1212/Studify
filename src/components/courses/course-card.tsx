@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { CourseOverview } from "@/lib/types";
 import ProgressBar from "@/components/ui/progress";
+import { deleteCourse } from "@/app/(app)/courses/actions";
 
 export default function CourseCard({ course }: { course: CourseOverview }) {
   return (
@@ -16,8 +17,19 @@ export default function CourseCard({ course }: { course: CourseOverview }) {
           </Link>
           <p className="mt-2 text-sm text-[var(--muted)]">{course.description}</p>
         </div>
-        <div className="rounded-full bg-[color:var(--surface-2)] px-4 py-2 text-xs font-semibold text-[var(--muted)]">
-          {course.topicsCompleted}/{course.topicsTotal} topics complete
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="rounded-full bg-[color:var(--surface-2)] px-4 py-2 text-xs font-semibold text-[var(--muted)]">
+            {course.topicsCompleted}/{course.topicsTotal} topics complete
+          </div>
+          <form action={deleteCourse}>
+            <input type="hidden" name="courseId" value={course.id} />
+            <button
+              type="submit"
+              className="rounded-full border border-rose-200 px-3 py-1 text-xs font-semibold text-rose-600"
+            >
+              Delete
+            </button>
+          </form>
         </div>
       </div>
 
@@ -50,7 +62,12 @@ export default function CourseCard({ course }: { course: CourseOverview }) {
           <div key={topic.id} className="rounded-2xl bg-white p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold">{topic.title}</p>
+                <Link
+                  href={`/courses/${course.id}/topics/${topic.id}`}
+                  className="text-sm font-semibold text-[var(--ink)] hover:underline"
+                >
+                  {topic.title}
+                </Link>
                 <p className="text-xs text-[var(--muted)]">
                   {topic.materials} materials - {topic.notes} notes - {topic.flashcards} flashcards
                 </p>
@@ -66,17 +83,24 @@ export default function CourseCard({ course }: { course: CourseOverview }) {
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
               {[
-                "Open Notes",
-                "Ask AI",
-                "Generate Quiz",
-                "Make Flashcards",
+                { label: "Open Notes", href: `/courses/${course.id}/topics/${topic.id}#notes` },
+                { label: "Ask AI", href: `/courses/${course.id}/topics/${topic.id}#ai` },
+                {
+                  label: "Generate Quiz",
+                  href: `/courses/${course.id}/topics/${topic.id}#quizzes`,
+                },
+                {
+                  label: "Make Flashcards",
+                  href: `/courses/${course.id}/topics/${topic.id}#flashcards`,
+                },
               ].map((action) => (
-                <button
-                  key={action}
+                <Link
+                  key={action.label}
+                  href={action.href}
                   className="rounded-full bg-[color:var(--surface-2)] px-3 py-1 text-xs font-semibold text-[color:var(--accent)]"
                 >
-                  {action}
-                </button>
+                  {action.label}
+                </Link>
               ))}
             </div>
           </div>
