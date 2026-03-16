@@ -100,7 +100,8 @@ export async function uploadMaterial(_: unknown, formData: FormData) {
     return { error: insertError?.message ?? "Failed to save material." };
   }
 
-  const origin = headers().get("origin") ?? process.env.NEXT_PUBLIC_SITE_URL ?? "";
+  const headerStore = await headers();
+  const origin = headerStore.get("origin") ?? process.env.NEXT_PUBLIC_SITE_URL ?? "";
 
   await fetch(`${origin}/api/materials/process`, {
     method: "POST",
