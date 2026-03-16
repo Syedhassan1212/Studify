@@ -28,9 +28,13 @@ export async function supabaseServer() {
         if (typeof (cookieStore as { set?: (name: string, value: string, options?: unknown) => void }).set !== "function") {
           return;
         }
-        cookiesToSet.forEach(({ name, value, options }) => {
-          cookieStore.set(name, value, options);
-        });
+        try {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options);
+          });
+        } catch {
+          // In RSC/SSR contexts cookies may be read-only; ignore set attempts.
+        }
       },
     },
   });
