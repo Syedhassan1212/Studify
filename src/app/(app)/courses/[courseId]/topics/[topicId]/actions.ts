@@ -192,7 +192,7 @@ export async function logQuizResult(_: unknown, formData: FormData) {
   return { success: true };
 }
 
-export async function importLatestMaterialToNotes(_: unknown, formData: FormData) {
+export async function importLatestMaterialToNotes(formData: FormData) {
   const topicId = String(formData.get("topicId") ?? "");
   const courseId = String(formData.get("courseId") ?? "");
 
