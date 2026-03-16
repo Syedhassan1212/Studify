@@ -169,6 +169,10 @@ export default function NoteEditor({
         />
       ) : (
         <div className="min-h-[240px] w-full rounded-2xl border border-[color:var(--surface-2)] bg-white px-3 py-2 text-sm leading-7 text-[var(--ink)]">
+          <input type="hidden" name={name} value={value} />
+          <p className="mb-2 text-[11px] uppercase tracking-[0.2em] text-[var(--muted)]">
+            Preview mode. Click Edit to change notes.
+          </p>
           {previewText.trim().length === 0 ? (
             <p className="text-sm text-[var(--muted)]">No notes yet.</p>
           ) : (
