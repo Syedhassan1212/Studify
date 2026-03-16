@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 import { createEvent } from "./actions";
 
 const initialState = { error: "" };
@@ -10,7 +10,7 @@ export default function CalendarEventForm({
 }: {
   courses: { id: string; name: string }[];
 }) {
-  const [state, action] = useFormState(createEvent, initialState);
+  const [state, action] = useActionState(createEvent, initialState);
 
   return (
     <form action={action} className="grid gap-3 md:grid-cols-2">

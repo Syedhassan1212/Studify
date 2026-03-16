@@ -1,15 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 import { signIn, signUp } from "./actions";
 
 const initialState = { error: "", message: "" };
 
 export default function LoginForm() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
-  const [signInState, signInAction] = useFormState(signIn, initialState);
-  const [signUpState, signUpAction] = useFormState(signUp, initialState);
+  const [signInState, signInAction] = useActionState(signIn, initialState);
+  const [signUpState, signUpAction] = useActionState(signUp, initialState);
 
   const state = mode === "signin" ? signInState : signUpState;
   const action = mode === "signin" ? signInAction : signUpAction;

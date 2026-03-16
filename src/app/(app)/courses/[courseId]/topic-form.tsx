@@ -1,12 +1,12 @@
 "use client";
 
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 import { createTopic } from "./actions";
 
 const initialState = { error: "" };
 
 export default function TopicForm({ courseId }: { courseId: string }) {
-  const [state, action] = useFormState(createTopic, initialState);
+  const [state, action] = useActionState(createTopic, initialState);
 
   return (
     <form action={action} className="mt-4 grid gap-3">

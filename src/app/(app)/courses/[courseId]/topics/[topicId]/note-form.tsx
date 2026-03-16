@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 import NoteEditor from "@/components/notes/note-editor";
 import { saveNote } from "./actions";
 
@@ -15,7 +15,7 @@ export default function NoteForm({
   topicId: string;
   initialContent: string;
 }) {
-  const [state, action] = useFormState(saveNote, initialState);
+  const [state, action] = useActionState(saveNote, initialState);
 
   return (
     <form action={action} className="grid gap-3">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 import { uploadMaterial } from "./actions";
 
 const initialState = { error: "" };
@@ -12,7 +12,7 @@ export default function MaterialUploadForm({
   courseId: string;
   topicId: string;
 }) {
-  const [state, action] = useFormState(uploadMaterial, initialState);
+  const [state, action] = useActionState(uploadMaterial, initialState);
 
   return (
     <form action={action} className="mt-3 grid gap-3">

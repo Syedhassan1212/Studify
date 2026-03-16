@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 import { reviewFlashcard } from "./actions";
 
 const initialState = { error: "" };
@@ -14,7 +14,7 @@ export default function FlashcardReview({
   topicId: string;
   flashcardId: string;
 }) {
-  const [state, action] = useFormState(reviewFlashcard, initialState);
+  const [state, action] = useActionState(reviewFlashcard, initialState);
 
   return (
     <form action={action} className="mt-2 flex flex-wrap items-center gap-2">

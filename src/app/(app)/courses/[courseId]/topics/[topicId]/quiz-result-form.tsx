@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 import { logQuizResult } from "./actions";
 
 const initialState = { error: "" };
@@ -14,7 +14,7 @@ export default function QuizResultForm({
   topicId: string;
   quizzes: { id: string }[];
 }) {
-  const [state, action] = useFormState(logQuizResult, initialState);
+  const [state, action] = useActionState(logQuizResult, initialState);
 
   if (quizzes.length === 0) {
     return null;
