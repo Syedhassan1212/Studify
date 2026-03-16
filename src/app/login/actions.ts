@@ -41,8 +41,21 @@ export async function signUp(_: AuthState, formData: FormData): Promise<AuthStat
     return { error: error.message };
   }
 
-  if (data?.user?.identities?.length === 0) {
-    return { message: "Check your email to confirm your account." };
+  if (data?.session) {
+    redirect("/dashboard");
+  }
+
+  // If email confirmation is disabled, some setups still require a manual sign-in.
+  const { error: signInError } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (signInError) {
+    return {
+      message:
+        "Account created. Please confirm your email (if required) and then sign in.",
+    };
   }
 
   redirect("/dashboard");
