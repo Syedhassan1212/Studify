@@ -105,14 +105,15 @@ create index if not exists study_chunks_embedding_idx
 create or replace function public.match_study_chunks(
   query_embedding vector(768),
   match_count int,
-  topic_id uuid default null
+  filter_topic_id uuid default null
 )
 returns table (
   id uuid,
   content text,
   source_type text,
   source_id uuid,
-  similarity float
+  similarity float,
+  topic_id uuid
 )
 language sql stable as $$
   select
@@ -120,10 +121,11 @@ language sql stable as $$
     study_chunks.content,
     study_chunks.source_type,
     study_chunks.source_id,
-    1 - (study_chunks.embedding <=> query_embedding) as similarity
+    1 - (study_chunks.embedding <=> query_embedding) as similarity,
+    study_chunks.topic_id
   from public.study_chunks
   where study_chunks.embedding is not null
-    and (topic_id is null or study_chunks.topic_id = topic_id)
+    and (filter_topic_id is null or study_chunks.topic_id = filter_topic_id)
   order by study_chunks.embedding <=> query_embedding
   limit match_count;
 $$;

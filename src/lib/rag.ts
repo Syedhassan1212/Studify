@@ -7,6 +7,7 @@ export type RetrievedChunk = {
   source_type: string;
   source_id: string;
   similarity: number;
+  topic_id: string;
 };
 
 export async function retrieveContext({
@@ -24,14 +25,23 @@ export async function retrieveContext({
   const { data, error } = await supabase.rpc("match_study_chunks", {
     query_embedding: embedding,
     match_count: matchCount,
-    topic_id: topicId ?? null,
+    filter_topic_id: topicId ?? null,
   });
 
   if (error) {
     throw new Error(`Vector search failed: ${error.message}`);
   }
 
-  const chunks = (data ?? []) as RetrievedChunk[];
+  let chunks = (data ?? []) as RetrievedChunk[];
+  if (topicId) {
+    const filtered = chunks.filter((chunk) => chunk.topic_id === topicId);
+    if (chunks.length > 0 && filtered.length === 0) {
+      console.warn(
+        "RAG returned chunks outside the requested topic. Verify match_study_chunks filter.",
+      );
+    }
+    chunks = filtered;
+  }
   const context = chunks.map((chunk) => chunk.content).join("\n\n");
 
   return { context, chunks };
