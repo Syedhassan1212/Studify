@@ -10,7 +10,7 @@ type Summary = {
   raw?: string;
 };
 
-export default function NoteSummarizer({ notes }: { notes: string }) {
+export default function NoteSummarizer({ topicId }: { topicId: string }) {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -19,10 +19,21 @@ export default function NoteSummarizer({ notes }: { notes: string }) {
     setLoading(true);
     setError("");
     try {
+      const notesResponse = await fetch("/api/notes/latest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topicId }),
+      });
+      const notesData = await notesResponse.json();
+      const notesText = String(notesData?.text ?? "");
+      if (!notesText.trim()) {
+        throw new Error("No notes found yet. Save notes first.");
+      }
+
       const response = await fetch("/api/ai/summarize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ notes }),
+        body: JSON.stringify({ notes: notesText }),
       });
       const data = await response.json();
       if (!response.ok) {

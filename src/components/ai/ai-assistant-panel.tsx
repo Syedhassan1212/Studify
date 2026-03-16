@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 type SourceChunk = {
   id: string;
@@ -46,6 +48,14 @@ export default function AiAssistantPanel({ topicId }: { topicId: string }) {
     }
   }
 
+  const decodedAnswer = useMemo(() => {
+    if (!answer) return "";
+    if (typeof document === "undefined") return answer;
+    const textarea = document.createElement("textarea");
+    textarea.innerHTML = answer;
+    return textarea.value;
+  }, [answer]);
+
   return (
     <div className="grid gap-3">
       <div className="rounded-2xl bg-white p-4 text-sm text-[var(--muted)]">
@@ -84,8 +94,8 @@ export default function AiAssistantPanel({ topicId }: { topicId: string }) {
       ) : null}
 
       {answer ? (
-        <div className="rounded-2xl bg-white p-4 text-sm text-[var(--ink)] whitespace-pre-wrap">
-          {answer}
+        <div className="rounded-2xl bg-white p-4 text-sm text-[var(--ink)]">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{decodedAnswer}</ReactMarkdown>
         </div>
       ) : null}
 

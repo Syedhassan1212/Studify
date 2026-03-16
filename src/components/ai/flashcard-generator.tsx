@@ -10,10 +10,8 @@ type Flashcard = {
 
 export default function FlashcardGenerator({
   topicId,
-  notes,
 }: {
   topicId: string;
-  notes: string;
 }) {
   const [count, setCount] = useState(10);
   const [loading, setLoading] = useState(false);
@@ -25,10 +23,21 @@ export default function FlashcardGenerator({
     setLoading(true);
     setError("");
     try {
+      const notesResponse = await fetch("/api/notes/latest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topicId }),
+      });
+      const notesData = await notesResponse.json();
+      const notesText = String(notesData?.text ?? "");
+      if (!notesText.trim()) {
+        throw new Error("No notes found yet. Save notes first.");
+      }
+
       const response = await fetch("/api/ai/flashcards", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ notes, count }),
+        body: JSON.stringify({ notes: notesText, count }),
       });
       const data = await response.json();
       const cards = data.flashcards ?? [];

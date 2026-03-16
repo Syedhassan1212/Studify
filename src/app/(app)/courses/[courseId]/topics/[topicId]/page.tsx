@@ -113,7 +113,7 @@ export default async function TopicWorkspacePage({
                 initialContent={initialContent}
               />
               <div className="mt-4">
-                <NoteSummarizer notes={initialContent} />
+                <NoteSummarizer topicId={topic.id} />
               </div>
             </CardBody>
           </Card>
@@ -134,7 +134,7 @@ export default async function TopicWorkspacePage({
               <CardTitle>Flashcards</CardTitle>
             </CardHeader>
             <CardBody>
-              <FlashcardGenerator topicId={topic.id} notes={initialContent} />
+              <FlashcardGenerator topicId={topic.id} />
               <div className="mt-4 grid gap-3 text-sm">
                 {(flashcards ?? []).length === 0 ? (
                   <div className="rounded-2xl bg-white p-3 text-xs text-[var(--muted)]">

@@ -6,9 +6,11 @@ import { Bold, Code2, Highlighter, List } from "lucide-react";
 export default function NoteEditor({
   name = "content",
   defaultValue = "",
+  onChange,
 }: {
   name?: string;
   defaultValue?: string;
+  onChange?: (value: string) => void;
 }) {
   const [value, setValue] = useState(defaultValue);
   const editorRef = useRef<HTMLDivElement | null>(null);
@@ -38,13 +40,14 @@ export default function NoteEditor({
       </div>
       <div
         ref={editorRef}
-        className="min-h-[240px] px-1 pt-3 text-sm leading-7 text-[var(--ink)]"
+        className="min-h-[240px] whitespace-pre-wrap px-1 pt-3 text-sm leading-7 text-[var(--ink)] outline-none"
         contentEditable
         data-placeholder="Write your structured notes here..."
         suppressContentEditableWarning
         onInput={(event) => {
           const target = event.currentTarget;
           setValue(target.textContent ?? "");
+          onChange?.(target.textContent ?? "");
         }}
       />
       <input type="hidden" name={name} value={value} />
