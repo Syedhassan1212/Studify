@@ -29,7 +29,7 @@ export async function createTopic(_: unknown, formData: FormData) {
   return { success: true };
 }
 
-export async function deleteTopic(_: unknown, formData: FormData) {
+export async function deleteTopic(formData: FormData) {
   const courseId = String(formData.get("courseId") ?? "");
   const topicId = String(formData.get("topicId") ?? "");
 

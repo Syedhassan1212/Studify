@@ -24,7 +24,7 @@ export default async function CalendarPage() {
           <CalendarEventForm courses={courses ?? []} />
         </div>
       </div>
-      <CalendarView events={events} />
+      <CalendarView events={events} courses={courses ?? []} />
     </div>
   );
 }

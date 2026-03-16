@@ -25,8 +25,10 @@ export type CalendarEventItem = {
   id: string;
   title: string;
   course: string | null;
+  courseId: string | null;
   date: string;
   time: string;
+  timeValue: string;
   type: "assignment" | "quiz" | "exam" | "study" | "review";
   description: string | null;
 };

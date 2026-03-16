@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   addDays,
   eachDayOfInterval,
@@ -17,9 +18,31 @@ import Pill from "@/components/ui/pill";
 
 const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-export default function CalendarView({ events }: { events: CalendarEventItem[] }) {
+type CourseOption = { id: string; name: string };
+
+type DraftEvent = {
+  title: string;
+  courseId: string;
+  eventType: CalendarEventItem["type"];
+  date: string;
+  time: string;
+  description: string;
+};
+
+export default function CalendarView({
+  events,
+  courses,
+}: {
+  events: CalendarEventItem[];
+  courses: CourseOption[];
+}) {
   const [view, setView] = useState<"month" | "week">("month");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<DraftEvent | null>(null);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
   const today = new Date();
+  const router = useRouter();
 
   const { days, rangeLabel } = useMemo(() => {
     if (view === "week") {
@@ -46,6 +69,81 @@ export default function CalendarView({ events }: { events: CalendarEventItem[] }
       return acc;
     }, {});
   }, [events]);
+
+  function startEdit(event: CalendarEventItem) {
+    setEditingId(event.id);
+    setDraft({
+      title: event.title,
+      courseId: event.courseId ?? "",
+      eventType: event.type,
+      date: event.date,
+      time: event.timeValue,
+      description: event.description ?? "",
+    });
+    setError("");
+  }
+
+  async function saveEdit() {
+    if (!editingId || !draft) return;
+    if (!draft.title.trim() || !draft.date || !draft.time) {
+      setError("Title, date, and time are required.");
+      return;
+    }
+    setSaving(true);
+    setError("");
+    try {
+      const response = await fetch("/api/calendar/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editingId,
+          title: draft.title,
+          courseId: draft.courseId || null,
+          eventType: draft.eventType,
+          date: draft.date,
+          time: draft.time,
+          description: draft.description,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error ?? "Failed to update event.");
+      }
+      setEditingId(null);
+      setDraft(null);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update event.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function deleteEvent(eventId: string) {
+    if (!confirm("Delete this event?")) return;
+    setSaving(true);
+    setError("");
+    try {
+      const response = await fetch("/api/calendar/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: eventId }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error ?? "Failed to delete event.");
+      }
+      if (editingId === eventId) {
+        setEditingId(null);
+        setDraft(null);
+      }
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete event.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div className="app-surface rounded-[32px] p-6">
@@ -135,6 +233,11 @@ export default function CalendarView({ events }: { events: CalendarEventItem[] }
         <p className="text-xs uppercase tracking-[0.32em] text-[var(--muted)]">
           Upcoming Sessions
         </p>
+        {error ? (
+          <div className="rounded-2xl bg-[color:var(--surface-2)] px-4 py-2 text-xs text-[var(--muted)]">
+            {error}
+          </div>
+        ) : null}
         <div className="grid gap-3 md:grid-cols-2">
           {events.map((event) => (
             <div key={event.id} className="rounded-2xl bg-white p-4">
@@ -148,6 +251,129 @@ export default function CalendarView({ events }: { events: CalendarEventItem[] }
                 <Pill label={event.type} type={event.type} />
               </div>
               <p className="mt-2 text-xs text-[var(--muted)]">{event.description}</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => startEdit(event)}
+                  className="rounded-full border border-[color:var(--accent)] px-3 py-1 text-xs font-semibold text-[color:var(--accent)]"
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => deleteEvent(event.id)}
+                  disabled={saving}
+                  className="rounded-full border border-rose-200 px-3 py-1 text-xs font-semibold text-rose-600"
+                >
+                  Delete
+                </button>
+              </div>
+              {editingId === event.id && draft ? (
+                <div className="mt-4 grid gap-2 text-xs">
+                  <label className="grid gap-1">
+                    Title
+                    <input
+                      value={draft.title}
+                      onChange={(event) =>
+                        setDraft({ ...draft, title: event.target.value })
+                      }
+                      className="rounded-2xl border border-[color:var(--surface-2)] bg-white px-3 py-2 text-xs"
+                    />
+                  </label>
+                  <label className="grid gap-1">
+                    Course
+                    <select
+                      value={draft.courseId}
+                      onChange={(event) =>
+                        setDraft({ ...draft, courseId: event.target.value })
+                      }
+                      className="rounded-2xl border border-[color:var(--surface-2)] bg-white px-3 py-2 text-xs"
+                    >
+                      <option value="">No course</option>
+                      {courses.map((course) => (
+                        <option key={course.id} value={course.id}>
+                          {course.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="grid gap-1">
+                    Type
+                    <select
+                      value={draft.eventType}
+                      onChange={(event) =>
+                        setDraft({
+                          ...draft,
+                          eventType: event.target.value as CalendarEventItem["type"],
+                        })
+                      }
+                      className="rounded-2xl border border-[color:var(--surface-2)] bg-white px-3 py-2 text-xs"
+                    >
+                      <option value="assignment">Assignment</option>
+                      <option value="quiz">Quiz</option>
+                      <option value="exam">Exam</option>
+                      <option value="study">Study session</option>
+                      <option value="review">Review session</option>
+                    </select>
+                  </label>
+                  <div className="grid gap-2 md:grid-cols-2">
+                    <label className="grid gap-1">
+                      Date
+                      <input
+                        type="date"
+                        value={draft.date}
+                        onChange={(event) =>
+                          setDraft({ ...draft, date: event.target.value })
+                        }
+                        className="rounded-2xl border border-[color:var(--surface-2)] bg-white px-3 py-2 text-xs"
+                      />
+                    </label>
+                    <label className="grid gap-1">
+                      Time
+                      <input
+                        type="time"
+                        value={draft.time}
+                        onChange={(event) =>
+                          setDraft({ ...draft, time: event.target.value })
+                        }
+                        className="rounded-2xl border border-[color:var(--surface-2)] bg-white px-3 py-2 text-xs"
+                      />
+                    </label>
+                  </div>
+                  <label className="grid gap-1">
+                    Description
+                    <textarea
+                      rows={2}
+                      value={draft.description}
+                      onChange={(event) =>
+                        setDraft({ ...draft, description: event.target.value })
+                      }
+                      className="rounded-2xl border border-[color:var(--surface-2)] bg-white px-3 py-2 text-xs"
+                    />
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={saveEdit}
+                      disabled={saving}
+                      className="rounded-full bg-[color:var(--accent)] px-3 py-1 text-xs font-semibold text-white"
+                    >
+                      {saving ? "Saving..." : "Save changes"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingId(null);
+                        setDraft(null);
+                        setError("");
+                      }}
+                      className="rounded-full bg-[color:var(--surface-2)] px-3 py-1 text-xs font-semibold text-[var(--muted)]"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : null}
             </div>
           ))}
         </div>

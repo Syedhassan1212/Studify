@@ -241,8 +241,10 @@ export async function getCalendarEvents(): Promise<CalendarEventItem[]> {
       id: event.id,
       title: event.title,
       course: courseMap.get(event.course_id) ?? null,
+      courseId: event.course_id ?? null,
       date: format(start, "yyyy-MM-dd"),
       time: format(start, "h:mm a"),
+      timeValue: format(start, "HH:mm"),
       type: (event.event_type ?? "study") as CalendarEventItem["type"],
       description: event.description,
     };
