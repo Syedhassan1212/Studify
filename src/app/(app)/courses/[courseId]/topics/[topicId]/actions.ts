@@ -191,3 +191,54 @@ export async function logQuizResult(_: unknown, formData: FormData) {
   revalidatePath("/dashboard");
   return { success: true };
 }
+
+export async function importLatestMaterialToNotes(_: unknown, formData: FormData) {
+  const topicId = String(formData.get("topicId") ?? "");
+  const courseId = String(formData.get("courseId") ?? "");
+
+  if (!topicId) {
+    return { error: "Topic is required." };
+  }
+
+  const supabase = await supabaseServer();
+  const { data: material } = await supabase
+    .from("materials")
+    .select("extracted_text")
+    .eq("topic_id", topicId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!material?.extracted_text) {
+    return { error: "No processed material text found yet." };
+  }
+
+  const { data: existing } = await supabase
+    .from("notes")
+    .select("id")
+    .eq("topic_id", topicId)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (existing?.id) {
+    const { error } = await supabase
+      .from("notes")
+      .update({ content: { text: material.extracted_text }, updated_at: new Date().toISOString() })
+      .eq("id", existing.id);
+    if (error) {
+      return { error: error.message };
+    }
+  } else {
+    const { error } = await supabase
+      .from("notes")
+      .insert({ topic_id: topicId, content: { text: material.extracted_text } });
+    if (error) {
+      return { error: error.message };
+    }
+  }
+
+  await markStudyActivity();
+  revalidatePath(`/courses/${courseId}/topics/${topicId}`);
+  return { success: true };
+}

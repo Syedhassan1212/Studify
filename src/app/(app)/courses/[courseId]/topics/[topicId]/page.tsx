@@ -6,6 +6,7 @@ import FlashcardGenerator from "@/components/ai/flashcard-generator";
 import QuizGenerator from "@/components/ai/quiz-generator";
 import NoteSummarizer from "@/components/ai/note-summarizer";
 import QuizResultForm from "./quiz-result-form";
+import { importLatestMaterialToNotes } from "./actions";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/card";
 import { notFound } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
@@ -97,6 +98,13 @@ export default async function TopicWorkspacePage({
           <Card>
             <CardHeader>
               <CardTitle>Notes Studio</CardTitle>
+              <form action={importLatestMaterialToNotes}>
+                <input type="hidden" name="courseId" value={courseId} />
+                <input type="hidden" name="topicId" value={topic.id} />
+                <button className="rounded-full border border-[color:var(--accent)] px-3 py-1 text-xs font-semibold text-[color:var(--accent)]">
+                  Import Latest Material
+                </button>
+              </form>
             </CardHeader>
             <CardBody>
               <NoteForm
