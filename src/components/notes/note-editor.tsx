@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Bold, Code2, Highlighter, List } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export default function NoteEditor({
   name = "content",
@@ -14,6 +16,7 @@ export default function NoteEditor({
 }) {
   const [value, setValue] = useState(defaultValue);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const [mode, setMode] = useState<"edit" | "preview">("edit");
 
   useEffect(() => {
     setValue(defaultValue);
@@ -72,6 +75,17 @@ export default function NoteEditor({
     updateValue(next, nextStart, nextEnd);
   }
 
+  function sanitizePreview(text: string) {
+    return text.replace(/```+/g, "").replace(/==+/g, "");
+  }
+
+  function cleanFormatting() {
+    const next = sanitizePreview(value);
+    updateValue(next);
+  }
+
+  const previewText = useMemo(() => sanitizePreview(value), [value]);
+
   return (
     <div className="rounded-3xl bg-white p-4">
       <div className="flex flex-wrap items-center gap-2 border-b border-[color:var(--surface-2)] pb-3">
@@ -107,20 +121,63 @@ export default function NoteEditor({
         >
           <Highlighter size={16} />
         </button>
+        <button
+          type="button"
+          onClick={cleanFormatting}
+          className="rounded-xl bg-[color:var(--surface-2)] px-3 py-2 text-xs font-semibold text-[color:var(--accent)]"
+        >
+          Clean
+        </button>
         <span className="text-xs uppercase tracking-[0.28em] text-[var(--muted)]">
           Notes
         </span>
+        <div className="ml-auto flex gap-2">
+          <button
+            type="button"
+            onClick={() => setMode("edit")}
+            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+              mode === "edit"
+                ? "bg-[color:var(--accent)] text-white"
+                : "bg-[color:var(--surface-2)] text-[var(--muted)]"
+            }`}
+          >
+            Edit
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("preview")}
+            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+              mode === "preview"
+                ? "bg-[color:var(--accent)] text-white"
+                : "bg-[color:var(--surface-2)] text-[var(--muted)]"
+            }`}
+          >
+            Preview
+          </button>
+        </div>
       </div>
-      <textarea
-        ref={textareaRef}
-        name={name}
-        value={value}
-        onChange={(event) => {
-          updateValue(event.target.value);
-        }}
-        className="min-h-[240px] w-full resize-y whitespace-pre-wrap rounded-2xl border border-[color:var(--surface-2)] bg-white px-3 py-2 text-sm leading-7 text-[var(--ink)] outline-none"
-        placeholder="Write your structured notes here..."
-      />
+      {mode === "edit" ? (
+        <textarea
+          ref={textareaRef}
+          name={name}
+          value={value}
+          onChange={(event) => {
+            updateValue(event.target.value);
+          }}
+          className="min-h-[240px] w-full resize-y whitespace-pre-wrap rounded-2xl border border-[color:var(--surface-2)] bg-white px-3 py-2 text-sm leading-7 text-[var(--ink)] outline-none"
+          placeholder="Write your structured notes here..."
+        />
+      ) : (
+        <div className="min-h-[240px] w-full rounded-2xl border border-[color:var(--surface-2)] bg-white px-3 py-2 text-sm leading-7 text-[var(--ink)]">
+          {previewText.trim().length === 0 ? (
+            <p className="text-sm text-[var(--muted)]">No notes yet.</p>
+          ) : (
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {previewText}
+            </ReactMarkdown>
+          )}
+        </div>
+      )}
     </div>
   );
 }
