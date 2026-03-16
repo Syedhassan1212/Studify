@@ -16,7 +16,7 @@ export async function saveNote(_: unknown, formData: FormData) {
     return { error: "Topic is required." };
   }
 
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   const { data: existing } = await supabase
     .from("notes")
     .select("id")
@@ -60,7 +60,7 @@ export async function uploadMaterial(_: unknown, formData: FormData) {
     return { error: "Please select a file to upload." };
   }
 
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -128,7 +128,7 @@ export async function reviewFlashcard(_: unknown, formData: FormData) {
     return { error: "Flashcard is required." };
   }
 
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   const { data: flashcard } = await supabase
     .from("flashcards")
     .select("id,review_interval,ease_factor")
@@ -174,7 +174,7 @@ export async function logQuizResult(_: unknown, formData: FormData) {
     return { error: "Quiz is required." };
   }
 
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   const { error } = await supabase.from("quiz_results").insert({
     quiz_id: quizId,
     score,

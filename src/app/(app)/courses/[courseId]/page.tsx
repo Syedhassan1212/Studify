@@ -9,7 +9,7 @@ export default async function CourseDetailPage({
 }: {
   params: { courseId: string };
 }) {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   const { data: course } = await supabase
     .from("courses")
     .select("id,name,description")

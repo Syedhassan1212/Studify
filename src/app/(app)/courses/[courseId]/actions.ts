@@ -13,7 +13,7 @@ export async function createTopic(_: unknown, formData: FormData) {
     return { error: "Topic title is required." };
   }
 
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   const { error } = await supabase.from("topics").insert({
     course_id: courseId,
     title,

@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "topicId and questions are required." }, { status: 400 });
   }
 
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   const { error } = await supabase.from("quizzes").insert({
     topic_id: topicId,
     questions,

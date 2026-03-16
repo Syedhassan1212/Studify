@@ -16,7 +16,7 @@ export async function createEvent(_: unknown, formData: FormData) {
     return { error: "Title, date, and time are required." };
   }
 
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   const {
     data: { user },
   } = await supabase.auth.getUser();

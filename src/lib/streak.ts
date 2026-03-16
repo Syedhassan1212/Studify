@@ -2,7 +2,7 @@ import { format, isSameDay, subDays } from "date-fns";
 import { supabaseServer } from "@/lib/supabase/server";
 
 export async function markStudyActivity() {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   const {
     data: { user },
   } = await supabase.auth.getUser();

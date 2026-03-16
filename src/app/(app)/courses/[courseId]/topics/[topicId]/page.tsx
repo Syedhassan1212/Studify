@@ -15,7 +15,7 @@ export default async function TopicWorkspacePage({
 }: {
   params: { courseId: string; topicId: string };
 }) {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   const { data: topic } = await supabase
     .from("topics")
     .select("id,title,course_id")

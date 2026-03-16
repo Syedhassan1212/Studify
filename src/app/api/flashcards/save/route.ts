@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "topicId and flashcards are required." }, { status: 400 });
   }
 
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   const rows = flashcards.map((card: { front: string; back: string }) => ({
     topic_id: topicId,
     front: card.front,

@@ -5,7 +5,7 @@ import { supabaseServer } from "@/lib/supabase/server";
 
 export default async function CalendarPage() {
   const events = await getCalendarEvents();
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   const { data: courses } = await supabase.from("courses").select("id,name");
   return (
     <div className="flex flex-col gap-6">

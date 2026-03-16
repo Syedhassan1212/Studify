@@ -19,7 +19,7 @@ export async function retrieveContext({
   matchCount?: number;
 }) {
   const embedding = await embedGeminiText(query);
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
 
   const { data, error } = await supabase.rpc("match_study_chunks", {
     query_embedding: embedding,

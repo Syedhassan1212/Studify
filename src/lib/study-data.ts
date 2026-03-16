@@ -43,7 +43,7 @@ function formatReviewDate(date: Date | null) {
 }
 
 export async function getCourseOverviews(): Promise<CourseOverview[]> {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
 
   const [{ data: courses }, { data: topics }, { data: materials }, { data: notes }, { data: flashcards }, { data: quizzes }, { data: quizResults }] =
     await Promise.all([
@@ -151,7 +151,7 @@ export async function getCourseOverviews(): Promise<CourseOverview[]> {
 }
 
 export async function getDashboardData() {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
 
   const [courses, { data: events }, { data: streak }, { data: flashcards }, { data: topics }] =
     await Promise.all([
@@ -227,7 +227,7 @@ export async function getDashboardData() {
 }
 
 export async function getCalendarEvents(): Promise<CalendarEventItem[]> {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   const { data: events } = await supabase
     .from("calendar_events")
     .select("id,title,description,event_type,start_time,course_id");

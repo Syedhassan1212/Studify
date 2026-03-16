@@ -12,7 +12,7 @@ export async function createCourse(_: unknown, formData: FormData) {
     return { error: "Course name is required." };
   }
 
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   const {
     data: { user },
   } = await supabase.auth.getUser();
