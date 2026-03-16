@@ -12,6 +12,60 @@ type QuizQuestion = {
   explanation?: string;
 };
 
+function normalizeText(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (value == null) return "";
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+}
+
+function normalizeOptions(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => {
+        if (typeof item === "string") return item;
+        if (item && typeof item === "object") {
+          if ("text" in item && typeof (item as { text: unknown }).text === "string") {
+            return (item as { text: string }).text;
+          }
+          if ("label" in item && typeof (item as { label: unknown }).label === "string") {
+            return (item as { label: string }).label;
+          }
+          return normalizeText(item);
+        }
+        return normalizeText(item);
+      })
+      .filter((item) => item.trim().length > 0);
+  }
+  if (value && typeof value === "object") {
+    return Object.values(value as Record<string, unknown>)
+      .map((item) => normalizeText(item))
+      .filter((item) => item.trim().length > 0);
+  }
+  return [];
+}
+
+function normalizeQuestions(raw: unknown): QuizQuestion[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((item) => {
+    const question = normalizeText((item as QuizQuestion).question ?? (item as any)?.prompt);
+    const options = normalizeOptions((item as QuizQuestion).options ?? (item as any)?.choices);
+    const answer = normalizeText((item as QuizQuestion).answer ?? (item as any)?.correct);
+    const explanation = normalizeText((item as QuizQuestion).explanation);
+    return {
+      id: (item as QuizQuestion).id,
+      type: (item as QuizQuestion).type,
+      question,
+      options: options.length > 0 ? options : undefined,
+      answer: answer || undefined,
+      explanation: explanation || undefined,
+    };
+  });
+}
+
 export default function QuizGenerator({
   topicId,
   topicTitle,
@@ -63,15 +117,16 @@ export default function QuizGenerator({
           items = [];
         }
       }
-      if (!Array.isArray(items) || items.length === 0) {
+      const normalized = normalizeQuestions(items);
+      if (normalized.length === 0) {
         throw new Error("No quiz questions returned. Try again.");
       }
-      setQuestions(items);
+      setQuestions(normalized);
 
       const saveResponse = await fetch("/api/quizzes/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topicId, questions: items }),
+        body: JSON.stringify({ topicId, questions: normalized }),
       });
       if (!saveResponse.ok) {
         const saveData = await saveResponse.json();
@@ -174,8 +229,8 @@ export default function QuizGenerator({
               </p>
               {question.options?.length ? (
                 <div className="mt-2 grid gap-1 text-xs text-[var(--muted)]">
-                  {question.options.map((option) => (
-                    <span key={option}>{option}</span>
+                  {question.options.map((option, optionIndex) => (
+                    <span key={`${option}-${optionIndex}`}>{option}</span>
                   ))}
                 </div>
               ) : null}
