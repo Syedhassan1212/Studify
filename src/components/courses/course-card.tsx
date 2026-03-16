@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { CourseOverview } from "@/lib/types";
 import ProgressBar from "@/components/ui/progress";
 
@@ -7,7 +8,12 @@ export default function CourseCard({ course }: { course: CourseOverview }) {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.32em] text-[var(--muted)]">Course</p>
-          <h3 className="text-2xl font-semibold">{course.name}</h3>
+          <Link
+            href={`/courses/${course.id}`}
+            className="text-2xl font-semibold text-[var(--ink)] hover:underline"
+          >
+            {course.name}
+          </Link>
           <p className="mt-2 text-sm text-[var(--muted)]">{course.description}</p>
         </div>
         <div className="rounded-full bg-[color:var(--surface-2)] px-4 py-2 text-xs font-semibold text-[var(--muted)]">
@@ -22,6 +28,21 @@ export default function CourseCard({ course }: { course: CourseOverview }) {
           <span>{course.quizzesCompleted} quizzes completed</span>
           <span>Next review: {course.nextReview}</span>
         </div>
+      </div>
+
+      <div className="mt-6 flex flex-wrap gap-2">
+        <Link
+          href={`/courses/${course.id}`}
+          className="rounded-full bg-[color:var(--accent)] px-3 py-1 text-xs font-semibold text-white"
+        >
+          Open Course
+        </Link>
+        <Link
+          href={`/courses/${course.id}`}
+          className="rounded-full border border-[color:var(--accent)] px-3 py-1 text-xs font-semibold text-[color:var(--accent)]"
+        >
+          Add Topic
+        </Link>
       </div>
 
       <div className="mt-6 grid gap-3">
