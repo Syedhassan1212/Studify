@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Bold, Code2, Highlighter, List } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
 
 export default function NoteEditor({
   name = "content",
@@ -52,14 +53,27 @@ export default function NoteEditor({
     if (!el) return;
     const start = el.selectionStart ?? 0;
     const end = el.selectionEnd ?? 0;
+    if (start === end) {
+      const lineStart = value.lastIndexOf("\n", start - 1) + 1;
+      const nextBreak = value.indexOf("\n", start);
+      const lineEnd = nextBreak === -1 ? value.length : nextBreak;
+      const line = value.slice(lineStart, lineEnd);
+      const prefixedLine = line ? `${prefix}${line}` : prefix.trimEnd();
+      const next =
+        value.slice(0, lineStart) + prefixedLine + value.slice(lineEnd);
+      const nextStart = lineStart + prefix.length;
+      const nextEnd = lineStart + prefixedLine.length;
+      updateValue(next, nextStart, nextEnd);
+      return;
+    }
+
     const selected = value.slice(start, end);
-    const lines = (selected || value.slice(start)).split("\n");
-    const prefixed = lines.map((line) => (line ? `${prefix}${line}` : line)).join("\n");
-    const next =
-      value.slice(0, start) + prefixed + value.slice(end);
-    const nextStart = start;
-    const nextEnd = start + prefixed.length;
-    updateValue(next, nextStart, nextEnd);
+    const lines = selected.split("\n");
+    const prefixed = lines
+      .map((line) => (line ? `${prefix}${line}` : line))
+      .join("\n");
+    const next = value.slice(0, start) + prefixed + value.slice(end);
+    updateValue(next, start, start + prefixed.length);
   }
 
   function insertCodeBlock() {
@@ -75,23 +89,29 @@ export default function NoteEditor({
     updateValue(next, nextStart, nextEnd);
   }
 
-  function sanitizePreview(text: string) {
-    return text.replace(/```+/g, "").replace(/==+/g, "");
-  }
-
   function cleanFormatting() {
-    const next = sanitizePreview(value);
-    updateValue(next);
+    const next = value
+      .replace(/```+/g, "")
+      .replace(/==+/g, "")
+      .replace(/<\/?mark>/g, "");
+    updateValue(next.trim());
   }
 
-  const previewText = useMemo(() => sanitizePreview(value), [value]);
+  const previewText = useMemo(() => value, [value]);
+
+  function handleToolMouseDown(action: () => void) {
+    return (event: React.MouseEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      action();
+    };
+  }
 
   return (
     <div className="rounded-3xl bg-white p-4">
       <div className="flex flex-wrap items-center gap-2 border-b border-[color:var(--surface-2)] pb-3">
         <button
           type="button"
-          onClick={() => wrapSelection("**")}
+          onMouseDown={handleToolMouseDown(() => wrapSelection("**"))}
           className="rounded-xl bg-[color:var(--surface-2)] p-2 text-[color:var(--accent)]"
           title="Bold"
         >
@@ -99,7 +119,7 @@ export default function NoteEditor({
         </button>
         <button
           type="button"
-          onClick={() => prefixLines("- ")}
+          onMouseDown={handleToolMouseDown(() => prefixLines("- "))}
           className="rounded-xl bg-[color:var(--surface-2)] p-2 text-[color:var(--accent)]"
           title="Bullet list"
         >
@@ -107,7 +127,7 @@ export default function NoteEditor({
         </button>
         <button
           type="button"
-          onClick={() => insertCodeBlock()}
+          onMouseDown={handleToolMouseDown(() => insertCodeBlock())}
           className="rounded-xl bg-[color:var(--surface-2)] p-2 text-[color:var(--accent)]"
           title="Code block"
         >
@@ -115,7 +135,7 @@ export default function NoteEditor({
         </button>
         <button
           type="button"
-          onClick={() => wrapSelection("==")}
+          onMouseDown={handleToolMouseDown(() => wrapSelection("<mark>", "</mark>"))}
           className="rounded-xl bg-[color:var(--surface-2)] p-2 text-[color:var(--accent)]"
           title="Highlight"
         >
@@ -176,7 +196,7 @@ export default function NoteEditor({
           {previewText.trim().length === 0 ? (
             <p className="text-sm text-[var(--muted)]">No notes yet.</p>
           ) : (
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
               {previewText}
             </ReactMarkdown>
           )}
