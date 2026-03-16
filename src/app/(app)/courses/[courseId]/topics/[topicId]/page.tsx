@@ -36,7 +36,11 @@ export default async function TopicWorkspacePage({
         .select("id,file_name,file_url,extracted_text")
         .eq("topic_id", topic.id),
       supabase.from("flashcards").select("id,front,back").eq("topic_id", topic.id),
-      supabase.from("quizzes").select("id,questions").eq("topic_id", topic.id),
+      supabase
+        .from("quizzes")
+        .select("id,questions,created_at")
+        .eq("topic_id", topic.id)
+        .order("created_at", { ascending: false }),
       supabase
         .from("notes")
         .select("id,content")
@@ -162,24 +166,18 @@ export default async function TopicWorkspacePage({
               <CardTitle>Quizzes</CardTitle>
             </CardHeader>
             <CardBody>
-              <QuizGenerator topicId={topic.id} topicTitle={topic.title} />
+              <QuizGenerator
+                topicId={topic.id}
+                topicTitle={topic.title}
+                savedQuizzes={
+                  (quizzes ?? []).map((quiz) => ({
+                    id: quiz.id,
+                    questions: Array.isArray(quiz.questions) ? quiz.questions : [],
+                    createdAt: quiz.created_at ?? null,
+                  })) ?? []
+                }
+              />
               <QuizResultForm courseId={courseId} topicId={topic.id} quizzes={quizzes ?? []} />
-              <div className="mt-4 grid gap-2 text-sm">
-                {(quizzes ?? []).length === 0 ? (
-                  <div className="rounded-2xl bg-white p-3 text-xs text-[var(--muted)]">
-                    No quizzes yet.
-                  </div>
-                ) : (
-                  (quizzes ?? []).map((quiz, index) => (
-                    <div key={quiz.id} className="rounded-2xl bg-white p-3">
-                      <p className="font-semibold">Quiz {index + 1}</p>
-                      <p className="text-xs text-[var(--muted)]">
-                        {Array.isArray(quiz.questions) ? quiz.questions.length : 0} questions
-                      </p>
-                    </div>
-                  ))
-                )}
-              </div>
             </CardBody>
           </Card>
         </div>

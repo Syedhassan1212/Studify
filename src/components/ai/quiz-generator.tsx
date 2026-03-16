@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type QuizQuestion = {
@@ -69,17 +69,30 @@ function normalizeQuestions(raw: unknown): QuizQuestion[] {
 export default function QuizGenerator({
   topicId,
   topicTitle,
+  savedQuizzes = [],
 }: {
   topicId: string;
   topicTitle: string;
+  savedQuizzes?: { id: string; questions: unknown[]; createdAt?: string | null }[];
 }) {
   const [count, setCount] = useState(5);
   const [difficulty, setDifficulty] = useState("medium");
   const [type, setType] = useState("mixed");
   const [loading, setLoading] = useState(false);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
+  const [revealed, setRevealed] = useState<Record<string, boolean>>({});
+  const [revealedSaved, setRevealedSaved] = useState<Record<string, boolean>>({});
+  const [openSaved, setOpenSaved] = useState<string | null>(null);
   const [error, setError] = useState("");
   const router = useRouter();
+
+  const normalizedSaved = useMemo(() => {
+    return savedQuizzes.map((quiz) => ({
+      id: quiz.id,
+      createdAt: quiz.createdAt ?? null,
+      questions: normalizeQuestions(quiz.questions ?? []),
+    }));
+  }, [savedQuizzes]);
 
   async function generate() {
     setLoading(true);
@@ -222,25 +235,134 @@ export default function QuizGenerator({
 
       {questions.length > 0 ? (
         <div className="grid gap-2 text-sm">
-          {questions.map((question, index) => (
-            <div key={`${question.question}-${index}`} className="rounded-2xl bg-white p-3">
-              <p className="font-semibold">
-                {index + 1}. {question.question}
-              </p>
-              {question.options?.length ? (
-                <div className="mt-2 grid gap-1 text-xs text-[var(--muted)]">
-                  {question.options.map((option, optionIndex) => (
-                    <span key={`${option}-${optionIndex}`}>{option}</span>
-                  ))}
+          {questions.map((question, index) => {
+            const revealKey = `generated-${index}`;
+            const isRevealed = revealed[revealKey];
+            return (
+              <div key={`${question.question}-${index}`} className="rounded-2xl bg-white p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="font-semibold">
+                    {index + 1}. {question.question}
+                  </p>
+                  {question.type ? (
+                    <span className="rounded-full bg-[color:var(--surface-2)] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[var(--muted)]">
+                      {question.type}
+                    </span>
+                  ) : null}
                 </div>
-              ) : null}
-              {question.answer ? (
-                <p className="mt-2 text-xs text-[var(--muted)]">Answer: {question.answer}</p>
-              ) : null}
-            </div>
-          ))}
+                {question.options?.length ? (
+                  <div className="mt-2 grid gap-1 text-xs text-[var(--muted)]">
+                    {question.options.map((option, optionIndex) => (
+                      <span key={`${option}-${optionIndex}`}>{option}</span>
+                    ))}
+                  </div>
+                ) : null}
+                {question.answer ? (
+                  <div className="mt-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setRevealed((prev) => ({
+                          ...prev,
+                          [revealKey]: !prev[revealKey],
+                        }))
+                      }
+                      className="rounded-full bg-[color:var(--surface-2)] px-3 py-1 text-xs font-semibold text-[var(--accent)]"
+                    >
+                      {isRevealed ? "Hide answer" : "Show answer"}
+                    </button>
+                    {isRevealed ? (
+                      <p className="mt-2 text-xs text-[var(--muted)]">
+                        Answer: {question.answer}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
         </div>
       ) : null}
+
+      <div className="mt-4 grid gap-2 text-sm">
+        <p className="text-xs uppercase tracking-[0.28em] text-[var(--muted)]">
+          Past Quizzes
+        </p>
+        {normalizedSaved.length === 0 ? (
+          <div className="rounded-2xl bg-white p-3 text-xs text-[var(--muted)]">
+            No quizzes yet.
+          </div>
+        ) : (
+          normalizedSaved.map((quiz, index) => {
+            const isOpen = openSaved === quiz.id;
+            return (
+              <div key={quiz.id} className="rounded-2xl bg-white p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-semibold">Quiz {index + 1}</p>
+                    <p className="text-xs text-[var(--muted)]">
+                      {quiz.questions.length} questions
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setOpenSaved(isOpen ? null : quiz.id)}
+                    className="rounded-full border border-[color:var(--accent)] px-3 py-1 text-xs font-semibold text-[color:var(--accent)]"
+                  >
+                    {isOpen ? "Hide" : "View"}
+                  </button>
+                </div>
+                {isOpen ? (
+                  <div className="mt-3 grid gap-2">
+                    {quiz.questions.map((question, questionIndex) => {
+                      const savedKey = `${quiz.id}-${questionIndex}`;
+                      const isAnswerVisible = revealedSaved[savedKey];
+                      return (
+                        <div
+                          key={savedKey}
+                          className="rounded-2xl bg-[color:var(--surface-2)] px-3 py-2"
+                        >
+                          <p className="text-xs font-semibold">
+                            {questionIndex + 1}. {question.question}
+                          </p>
+                          {question.options?.length ? (
+                            <div className="mt-2 grid gap-1 text-[11px] text-[var(--muted)]">
+                              {question.options.map((option, optionIndex) => (
+                                <span key={`${savedKey}-${optionIndex}`}>{option}</span>
+                              ))}
+                            </div>
+                          ) : null}
+                          {question.answer ? (
+                            <div className="mt-2">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setRevealedSaved((prev) => ({
+                                    ...prev,
+                                    [savedKey]: !prev[savedKey],
+                                  }))
+                                }
+                                className="rounded-full bg-white px-3 py-1 text-[11px] font-semibold text-[color:var(--accent)]"
+                              >
+                                {isAnswerVisible ? "Hide answer" : "Show answer"}
+                              </button>
+                              {isAnswerVisible ? (
+                                <p className="mt-2 text-[11px] text-[var(--muted)]">
+                                  Answer: {question.answer}
+                                </p>
+                              ) : null}
+                            </div>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </div>
+            );
+          })
+        )}
+      </div>
     </div>
   );
 }
