@@ -51,6 +51,9 @@ export default function QuizGenerator({
         }),
       });
       const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error ?? "Failed to generate quiz.");
+      }
       let items = data.questions ?? [];
       if ((!Array.isArray(items) || items.length === 0) && data.raw) {
         try {

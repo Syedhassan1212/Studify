@@ -1,6 +1,27 @@
 import { NextResponse } from "next/server";
 import { generateGeminiText } from "@/lib/gemini";
 
+function extractJson(raw: string) {
+  if (!raw) return null;
+  const fenceMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const candidate = (fenceMatch?.[1] ?? raw).trim();
+  const first = candidate.indexOf("{");
+  const last = candidate.lastIndexOf("}");
+  if (first !== -1 && last !== -1 && last > first) {
+    const slice = candidate.slice(first, last + 1);
+    try {
+      return JSON.parse(slice);
+    } catch {
+      // fall through
+    }
+  }
+  try {
+    return JSON.parse(candidate);
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(request: Request) {
   const body = await request.json();
   const notes = String(body?.notes ?? "");
@@ -10,10 +31,9 @@ export async function POST(request: Request) {
 
   const raw = await generateGeminiText({ prompt, temperature: 0.3 });
 
-  try {
-    const parsed = JSON.parse(raw);
+  const parsed = extractJson(raw);
+  if (parsed) {
     return NextResponse.json(parsed);
-  } catch {
-    return NextResponse.json({ raw });
   }
+  return NextResponse.json({ raw: raw.trim() });
 }
