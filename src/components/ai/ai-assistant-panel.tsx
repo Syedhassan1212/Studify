@@ -28,10 +28,18 @@ export default function AiAssistantPanel({ topicId }: { topicId: string }) {
     setSources([]);
 
     try {
+      const notesResponse = await fetch("/api/notes/latest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topicId }),
+      });
+      const notesData = await notesResponse.json();
+      const notesText = String(notesData?.text ?? "");
+
       const response = await fetch("/api/ai/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: prompt, topicId }),
+        body: JSON.stringify({ question: prompt, topicId, notes: notesText }),
       });
 
       const data = await response.json();

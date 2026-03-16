@@ -31,10 +31,24 @@ export default function QuizGenerator({
     setLoading(true);
     setError("");
     try {
+      const notesResponse = await fetch("/api/notes/latest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topicId }),
+      });
+      const notesData = await notesResponse.json();
+      const notesText = String(notesData?.text ?? "");
+
       const response = await fetch("/api/ai/quiz", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic: topicTitle, count, difficulty, type }),
+        body: JSON.stringify({
+          topic: topicTitle,
+          notes: notesText,
+          count,
+          difficulty,
+          type,
+        }),
       });
       const data = await response.json();
       const items = data.questions ?? [];

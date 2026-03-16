@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Bold, Code2, Highlighter, List } from "lucide-react";
 
 export default function NoteEditor({
@@ -13,13 +13,9 @@ export default function NoteEditor({
   onChange?: (value: string) => void;
 }) {
   const [value, setValue] = useState(defaultValue);
-  const editorRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setValue(defaultValue);
-    if (editorRef.current && editorRef.current.textContent !== defaultValue) {
-      editorRef.current.textContent = defaultValue;
-    }
   }, [defaultValue]);
 
   return (
@@ -38,19 +34,16 @@ export default function NoteEditor({
           Notes
         </span>
       </div>
-      <div
-        ref={editorRef}
-        className="min-h-[240px] whitespace-pre-wrap px-1 pt-3 text-sm leading-7 text-[var(--ink)] outline-none"
-        contentEditable
-        data-placeholder="Write your structured notes here..."
-        suppressContentEditableWarning
-        onInput={(event) => {
-          const target = event.currentTarget;
-          setValue(target.textContent ?? "");
-          onChange?.(target.textContent ?? "");
+      <textarea
+        name={name}
+        value={value}
+        onChange={(event) => {
+          setValue(event.target.value);
+          onChange?.(event.target.value);
         }}
+        className="min-h-[240px] w-full resize-y whitespace-pre-wrap rounded-2xl border border-[color:var(--surface-2)] bg-white px-3 py-2 text-sm leading-7 text-[var(--ink)] outline-none"
+        placeholder="Write your structured notes here..."
       />
-      <input type="hidden" name={name} value={value} />
     </div>
   );
 }
