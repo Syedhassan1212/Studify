@@ -37,9 +37,21 @@ export async function POST(request: Request) {
     extraNotes ||
     "No relevant context found.";
 
-  const prompt = `Context:\n${combinedContext}\n\nQuestion: ${question}\n\nAnswer in clear study-friendly language with short paragraphs and bullet points when helpful.`;
+  const maxChars = 12000;
+  const trimmedContext =
+    combinedContext.length > maxChars
+      ? combinedContext.slice(0, maxChars) + "\n\nNOTE: Context was truncated."
+      : combinedContext;
 
-  const answer = await generateGeminiText({ system, prompt, temperature: 0.2 });
+  const prompt = `Context:\n${trimmedContext}\n\nQuestion: ${question}\n\nAnswer in clear study-friendly language with short paragraphs and bullet points when helpful.`;
+
+  let answer = "";
+  try {
+    answer = await generateGeminiText({ system, prompt, temperature: 0.2 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Gemini request failed.";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 
   return NextResponse.json({ answer, sources: chunks });
 }
