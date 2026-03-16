@@ -7,6 +7,43 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
 import { markStudyActivity } from "@/lib/streak";
 import { scheduleNextReview } from "@/lib/spaced-repetition";
+import { chunkText } from "@/lib/chunking";
+import { embedGeminiText } from "@/lib/gemini";
+
+async function upsertNoteChunks({
+  supabase,
+  topicId,
+  noteId,
+  text,
+}: {
+  supabase: Awaited<ReturnType<typeof supabaseServer>>;
+  topicId: string;
+  noteId: string;
+  text: string;
+}) {
+  await supabase
+    .from("study_chunks")
+    .delete()
+    .eq("source_type", "note")
+    .eq("source_id", noteId);
+
+  const chunks = chunkText(text);
+  const rows: Array<Record<string, unknown>> = [];
+  for (const chunk of chunks) {
+    const embedding = await embedGeminiText(chunk);
+    rows.push({
+      topic_id: topicId,
+      source_type: "note",
+      source_id: noteId,
+      content: chunk,
+      embedding,
+    });
+  }
+
+  if (rows.length > 0) {
+    await supabase.from("study_chunks").insert(rows);
+  }
+}
 
 export async function saveNote(_: unknown, formData: FormData) {
   const topicId = String(formData.get("topicId") ?? "");
@@ -33,12 +70,20 @@ export async function saveNote(_: unknown, formData: FormData) {
     if (error) {
       return { error: error.message };
     }
+    if (content) {
+      await upsertNoteChunks({ supabase, topicId, noteId: existing.id, text: content });
+    }
   } else {
-    const { error } = await supabase
+    const { data: created, error } = await supabase
       .from("notes")
-      .insert({ topic_id: topicId, content: { text: content } });
+      .insert({ topic_id: topicId, content: { text: content } })
+      .select("id")
+      .single();
     if (error) {
       return { error: error.message };
+    }
+    if (created?.id && content) {
+      await upsertNoteChunks({ supabase, topicId, noteId: created.id, text: content });
     }
   }
 
@@ -221,6 +266,7 @@ export async function importLatestMaterialToNotes(formData: FormData) {
     .limit(1)
     .maybeSingle();
 
+  let noteId = existing?.id ?? "";
   if (existing?.id) {
     const { error } = await supabase
       .from("notes")
@@ -230,12 +276,24 @@ export async function importLatestMaterialToNotes(formData: FormData) {
       return { error: error.message };
     }
   } else {
-    const { error } = await supabase
+    const { data: created, error } = await supabase
       .from("notes")
-      .insert({ topic_id: topicId, content: { text: material.extracted_text } });
+      .insert({ topic_id: topicId, content: { text: material.extracted_text } })
+      .select("id")
+      .single();
     if (error) {
       return { error: error.message };
     }
+    noteId = created?.id ?? "";
+  }
+
+  if (noteId && material.extracted_text) {
+    await upsertNoteChunks({
+      supabase,
+      topicId,
+      noteId,
+      text: material.extracted_text,
+    });
   }
 
   await markStudyActivity();

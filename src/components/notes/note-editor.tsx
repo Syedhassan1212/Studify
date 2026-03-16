@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bold, Code2, Highlighter, List } from "lucide-react";
 
 export default function NoteEditor({
@@ -11,6 +11,14 @@ export default function NoteEditor({
   defaultValue?: string;
 }) {
   const [value, setValue] = useState(defaultValue);
+  const editorRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    setValue(defaultValue);
+    if (editorRef.current && editorRef.current.textContent !== defaultValue) {
+      editorRef.current.textContent = defaultValue;
+    }
+  }, [defaultValue]);
 
   return (
     <div className="rounded-3xl bg-white p-4">
@@ -29,6 +37,7 @@ export default function NoteEditor({
         </span>
       </div>
       <div
+        ref={editorRef}
         className="min-h-[240px] px-1 pt-3 text-sm leading-7 text-[var(--ink)]"
         contentEditable
         data-placeholder="Write your structured notes here..."
@@ -37,9 +46,7 @@ export default function NoteEditor({
           const target = event.currentTarget;
           setValue(target.textContent ?? "");
         }}
-      >
-        {defaultValue}
-      </div>
+      />
       <input type="hidden" name={name} value={value} />
     </div>
   );
