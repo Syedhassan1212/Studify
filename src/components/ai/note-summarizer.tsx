@@ -39,7 +39,16 @@ export default function NoteSummarizer({ topicId }: { topicId: string }) {
       if (!response.ok) {
         throw new Error(data?.error ?? "Failed to summarize notes.");
       }
-      setSummary(data);
+      if (data?.raw) {
+        try {
+          const parsed = JSON.parse(data.raw);
+          setSummary(parsed);
+        } catch {
+          setSummary({ raw: data.raw });
+        }
+      } else {
+        setSummary(data);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to summarize notes.");
     } finally {

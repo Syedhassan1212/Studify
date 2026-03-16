@@ -30,6 +30,6 @@ export async function POST(request: Request) {
     const parsed = JSON.parse(raw);
     return NextResponse.json(parsed);
   } catch {
-    return NextResponse.json({ raw });
+    return NextResponse.json({ raw: raw.trim() });
   }
 }

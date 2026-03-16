@@ -40,7 +40,15 @@ export default function FlashcardGenerator({
         body: JSON.stringify({ notes: notesText, count }),
       });
       const data = await response.json();
-      const cards = data.flashcards ?? [];
+      let cards = data.flashcards ?? [];
+      if ((!Array.isArray(cards) || cards.length === 0) && data.raw) {
+        try {
+          const parsed = JSON.parse(data.raw);
+          cards = parsed.flashcards ?? [];
+        } catch {
+          cards = [];
+        }
+      }
       if (!Array.isArray(cards) || cards.length === 0) {
         throw new Error("No flashcards returned. Add notes and try again.");
       }

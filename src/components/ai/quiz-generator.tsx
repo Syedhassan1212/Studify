@@ -51,7 +51,15 @@ export default function QuizGenerator({
         }),
       });
       const data = await response.json();
-      const items = data.questions ?? [];
+      let items = data.questions ?? [];
+      if ((!Array.isArray(items) || items.length === 0) && data.raw) {
+        try {
+          const parsed = JSON.parse(data.raw);
+          items = parsed.questions ?? [];
+        } catch {
+          items = [];
+        }
+      }
       if (!Array.isArray(items) || items.length === 0) {
         throw new Error("No quiz questions returned. Try again.");
       }
