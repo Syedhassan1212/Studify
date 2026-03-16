@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
 import TopicForm from "./topic-form";
 import KnowledgeGraph from "@/components/graph/knowledge-graph";
@@ -10,20 +11,43 @@ export default async function CourseDetailPage({
   params: { courseId: string };
 }) {
   const supabase = await supabaseServer();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
   const { data: course } = await supabase
     .from("courses")
     .select("id,name,description")
     .eq("id", params.courseId)
     .single();
 
-  if (!course) {
-    notFound();
+  let resolvedCourse = course;
+  if (!resolvedCourse) {
+    const admin = supabaseAdmin();
+    const { data: adminCourse } = await admin
+      .from("courses")
+      .select("id,name,description,user_id")
+      .eq("id", params.courseId)
+      .single();
+
+    if (!adminCourse || adminCourse.user_id !== user.id) {
+      notFound();
+    }
+    resolvedCourse = {
+      id: adminCourse.id,
+      name: adminCourse.name,
+      description: adminCourse.description,
+    };
   }
 
   const { data: topics } = await supabase
     .from("topics")
     .select("id,title")
-    .eq("course_id", course.id)
+    .eq("course_id", resolvedCourse.id)
     .order("created_at", { ascending: true });
 
   const topicIds = (topics ?? []).map((topic) => topic.id);
@@ -39,9 +63,9 @@ export default async function CourseDetailPage({
     <div className="flex flex-col gap-6">
       <header>
         <p className="text-xs uppercase tracking-[0.32em] text-[var(--muted)]">Course</p>
-        <h2 className="text-3xl font-semibold">{course.name}</h2>
+        <h2 className="text-3xl font-semibold">{resolvedCourse.name}</h2>
         <p className="mt-2 text-sm text-[var(--muted)]">
-          {course.description ||
+          {resolvedCourse.description ||
             "Pick a topic to open its workspace, upload materials, and start an AI study session."}
         </p>
       </header>
@@ -68,7 +92,7 @@ export default async function CourseDetailPage({
           <p className="text-xs uppercase tracking-[0.28em] text-[var(--muted)]">
             Add Topic
           </p>
-          <TopicForm courseId={course.id} />
+          <TopicForm courseId={resolvedCourse.id} />
         </div>
       </div>
 
