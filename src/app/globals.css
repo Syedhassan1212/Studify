@@ -1,26 +1,100 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #f6f1e9;
+  --surface: #fff8ef;
+  --surface-2: #efe3d1;
+  --surface-3: #e7d2b5;
+  --ink: #1f1e1b;
+  --muted: #5d5953;
+  --accent: #1b3a4b;
+  --accent-2: #f4a742;
+  --accent-3: #d96b5f;
+  --success: #2f7a5c;
+  --ring: rgba(27, 58, 75, 0.2);
+  --shadow: 0 18px 40px rgba(27, 58, 75, 0.12);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-background: var(--bg);
+  --color-foreground: var(--ink);
+  --font-sans: var(--font-space);
+  --font-serif: var(--font-fraunces);
+  --font-mono: var(--font-jetbrains);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(244, 167, 66, 0.25), transparent 45%),
+    radial-gradient(circle at 85% 20%, rgba(217, 107, 95, 0.18), transparent 45%),
+    linear-gradient(180deg, #fdf7ee 0%, #f3e7d3 55%, #f6f1e9 100%);
+  color: var(--ink);
+  font-family: var(--font-space), system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 24px;
+  padding: 24px;
+}
+
+.app-surface {
+  background: var(--surface);
+  border: 1px solid rgba(27, 58, 75, 0.08);
+  box-shadow: var(--shadow);
+}
+
+.surface-soft {
+  background: var(--surface-2);
+}
+
+.text-muted {
+  color: var(--muted);
+}
+
+.animate-rise {
+  animation: rise 0.6s ease-out both;
+}
+
+.animate-fade {
+  animation: fade 0.4s ease-out both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 1024px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+    padding: 20px;
+  }
+}
+
+[contenteditable][data-placeholder]:empty:before {
+  content: attr(data-placeholder);
+  color: var(--muted);
 }
