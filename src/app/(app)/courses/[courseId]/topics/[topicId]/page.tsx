@@ -30,7 +30,10 @@ export default async function TopicWorkspacePage({
 
   const [{ data: materials }, { data: flashcards }, { data: quizzes }, { data: note }] =
     await Promise.all([
-      supabase.from("materials").select("id,file_name,file_url").eq("topic_id", topic.id),
+      supabase
+        .from("materials")
+        .select("id,file_name,file_url,extracted_text")
+        .eq("topic_id", topic.id),
       supabase.from("flashcards").select("id,front,back").eq("topic_id", topic.id),
       supabase.from("quizzes").select("id,questions").eq("topic_id", topic.id),
       supabase
@@ -75,6 +78,15 @@ export default async function TopicWorkspacePage({
                       <p className="text-xs text-[var(--muted)]">
                         {file.file_url ? "Stored in Supabase Storage" : "Pending upload"}
                       </p>
+                      {file.extracted_text ? (
+                        <p className="mt-2 text-xs text-[var(--muted)]">
+                          {file.extracted_text.slice(0, 220)}...
+                        </p>
+                      ) : (
+                        <p className="mt-2 text-[11px] text-[var(--muted)]">
+                          Processing embeddings... refresh in a few seconds.
+                        </p>
+                      )}
                     </div>
                   ))
                 )}
