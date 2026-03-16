@@ -1,7 +1,7 @@
-import { CourseSummary } from "@/lib/mock-data";
+import type { CourseOverview } from "@/lib/types";
 import ProgressBar from "@/components/ui/progress";
 
-export default function CourseCard({ course }: { course: CourseSummary }) {
+export default function CourseCard({ course }: { course: CourseOverview }) {
   return (
     <div className="app-surface rounded-[28px] p-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -31,7 +31,7 @@ export default function CourseCard({ course }: { course: CourseSummary }) {
               <div>
                 <p className="text-sm font-semibold">{topic.title}</p>
                 <p className="text-xs text-[var(--muted)]">
-                  {topic.materials} materials · {topic.notes} notes · {topic.flashcards} flashcards
+                  {topic.materials} materials - {topic.notes} notes - {topic.flashcards} flashcards
                 </p>
               </div>
               <div className="rounded-full bg-[color:var(--surface-2)] px-3 py-1 text-xs font-semibold text-[var(--muted)]">

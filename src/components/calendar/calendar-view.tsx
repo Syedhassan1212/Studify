@@ -12,12 +12,12 @@ import {
   startOfMonth,
   startOfWeek,
 } from "date-fns";
-import { calendarEvents } from "@/lib/mock-data";
+import type { CalendarEventItem } from "@/lib/types";
 import Pill from "@/components/ui/pill";
 
 const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-export default function CalendarView() {
+export default function CalendarView({ events }: { events: CalendarEventItem[] }) {
   const [view, setView] = useState<"month" | "week">("month");
   const today = new Date();
 
@@ -41,11 +41,11 @@ export default function CalendarView() {
   }, [view, today]);
 
   const eventsByDate = useMemo(() => {
-    return calendarEvents.reduce<Record<string, typeof calendarEvents>>((acc, event) => {
+    return events.reduce<Record<string, CalendarEventItem[]>>((acc, event) => {
       acc[event.date] = acc[event.date] ? [...acc[event.date], event] : [event];
       return acc;
     }, {});
-  }, []);
+  }, [events]);
 
   return (
     <div className="app-surface rounded-[32px] p-6">
@@ -136,13 +136,13 @@ export default function CalendarView() {
           Upcoming Sessions
         </p>
         <div className="grid gap-3 md:grid-cols-2">
-          {calendarEvents.map((event) => (
+          {events.map((event) => (
             <div key={event.id} className="rounded-2xl bg-white p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-semibold">{event.title}</p>
                   <p className="text-xs text-[var(--muted)]">
-                    {event.course}  {event.date}  {event.time}
+                    {event.course ?? "No course"}  {event.date}  {event.time}
                   </p>
                 </div>
                 <Pill label={event.type} type={event.type} />

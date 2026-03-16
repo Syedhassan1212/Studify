@@ -80,6 +80,14 @@ export default function Sidebar() {
             );
           })}
         </div>
+        <form action="/logout" method="post" className="mt-4">
+          <button
+            type="submit"
+            className="w-full rounded-2xl border border-[color:var(--surface-3)] bg-white px-3 py-2 text-sm font-semibold text-[var(--muted)]"
+          >
+            Sign out
+          </button>
+        </form>
       </div>
     </aside>
   );

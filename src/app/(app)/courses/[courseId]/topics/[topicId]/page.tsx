@@ -1,12 +1,54 @@
-import NoteEditor from "@/components/notes/note-editor";
+import NoteForm from "./note-form";
+import MaterialUploadForm from "./material-upload-form";
+import FlashcardReview from "./flashcard-review";
+import AiAssistantPanel from "@/components/ai/ai-assistant-panel";
+import FlashcardGenerator from "@/components/ai/flashcard-generator";
+import QuizGenerator from "@/components/ai/quiz-generator";
+import NoteSummarizer from "@/components/ai/note-summarizer";
+import QuizResultForm from "./quiz-result-form";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/card";
+import { notFound } from "next/navigation";
+import { supabaseServer } from "@/lib/supabase/server";
 
-export default function TopicWorkspacePage() {
+export default async function TopicWorkspacePage({
+  params,
+}: {
+  params: { courseId: string; topicId: string };
+}) {
+  const supabase = supabaseServer();
+  const { data: topic } = await supabase
+    .from("topics")
+    .select("id,title,course_id")
+    .eq("id", params.topicId)
+    .eq("course_id", params.courseId)
+    .single();
+
+  if (!topic) {
+    notFound();
+  }
+
+  const [{ data: materials }, { data: flashcards }, { data: quizzes }, { data: note }] =
+    await Promise.all([
+      supabase.from("materials").select("id,file_name,file_url").eq("topic_id", topic.id),
+      supabase.from("flashcards").select("id,front,back").eq("topic_id", topic.id),
+      supabase.from("quizzes").select("id,questions").eq("topic_id", topic.id),
+      supabase
+        .from("notes")
+        .select("id,content")
+        .eq("topic_id", topic.id)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+
+  const initialContent =
+    typeof note?.content?.text === "string" ? note.content.text : "";
+
   return (
     <div className="flex flex-col gap-6">
       <header>
         <p className="text-xs uppercase tracking-[0.32em] text-[var(--muted)]">Topic Workspace</p>
-        <h2 className="text-3xl font-semibold">Study focus: Graph Theory</h2>
+        <h2 className="text-3xl font-semibold">Study focus: {topic.title}</h2>
         <p className="mt-2 text-sm text-[var(--muted)]">
           Materials, notes, AI tutoring, flashcards, and quizzes live side by side.
         </p>
@@ -17,19 +59,23 @@ export default function TopicWorkspacePage() {
           <Card>
             <CardHeader>
               <CardTitle>Materials</CardTitle>
-              <button className="rounded-full bg-[color:var(--accent)] px-3 py-1 text-xs font-semibold text-white">
-                Upload PDF
-              </button>
             </CardHeader>
             <CardBody>
-              <div className="grid gap-3 text-sm">
-                {["Lecture 12 - Graphs.pdf", "BFS Cheat Sheet.txt", "Shortest Paths Notes.pdf"].map(
-                  (file) => (
-                    <div key={file} className="rounded-2xl bg-white p-3">
-                      <p className="font-semibold">{file}</p>
-                      <p className="text-xs text-[var(--muted)]">Embedded for semantic search</p>
+              <MaterialUploadForm courseId={params.courseId} topicId={topic.id} />
+              <div className="mt-4 grid gap-3 text-sm">
+                {(materials ?? []).length === 0 ? (
+                  <div className="rounded-2xl bg-white p-3 text-xs text-[var(--muted)]">
+                    No materials yet.
+                  </div>
+                ) : (
+                  (materials ?? []).map((file) => (
+                    <div key={file.id} className="rounded-2xl bg-white p-3">
+                      <p className="font-semibold">{file.file_name ?? "Untitled material"}</p>
+                      <p className="text-xs text-[var(--muted)]">
+                        {file.file_url ? "Stored in Supabase Storage" : "Pending upload"}
+                      </p>
                     </div>
-                  ),
+                  ))
                 )}
               </div>
             </CardBody>
@@ -38,12 +84,16 @@ export default function TopicWorkspacePage() {
           <Card>
             <CardHeader>
               <CardTitle>Notes Studio</CardTitle>
-              <button className="rounded-full border border-[color:var(--accent)] px-3 py-1 text-xs font-semibold text-[color:var(--accent)]">
-                Summarize
-              </button>
             </CardHeader>
             <CardBody>
-              <NoteEditor />
+              <NoteForm
+                courseId={params.courseId}
+                topicId={topic.id}
+                initialContent={initialContent}
+              />
+              <div className="mt-4">
+                <NoteSummarizer notes={initialContent} />
+              </div>
             </CardBody>
           </Card>
         </div>
@@ -52,41 +102,35 @@ export default function TopicWorkspacePage() {
           <Card>
             <CardHeader>
               <CardTitle>AI Assistant</CardTitle>
-              <button className="rounded-full bg-[color:var(--accent-2)] px-3 py-1 text-xs font-semibold text-[var(--ink)]">
-                Explain Like I'm Dumb
-              </button>
             </CardHeader>
             <CardBody>
-              <div className="rounded-2xl bg-white p-4 text-sm text-[var(--muted)]">
-                Ask questions, get contextual answers from your notes and materials. The AI will cite
-                relevant chunks.
-              </div>
-              <input
-                className="mt-3 w-full rounded-full border border-[color:var(--surface-2)] bg-white px-4 py-2 text-sm"
-                placeholder="Ask about Dijkstra, BFS, or MST..."
-              />
-              <button className="mt-2 rounded-full bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-white">
-                Ask AI
-              </button>
+              <AiAssistantPanel topicId={topic.id} />
             </CardBody>
           </Card>
 
           <Card>
             <CardHeader>
               <CardTitle>Flashcards</CardTitle>
-              <button className="rounded-full border border-[color:var(--accent)] px-3 py-1 text-xs font-semibold text-[color:var(--accent)]">
-                Generate
-              </button>
             </CardHeader>
             <CardBody>
-              <div className="grid gap-3 text-sm">
-                {["Define BFS", "What is Dijkstra's algorithm?", "Explain edge relaxation"].map(
-                  (front) => (
-                    <div key={front} className="rounded-2xl bg-white p-3">
-                      <p className="font-semibold">{front}</p>
+              <FlashcardGenerator topicId={topic.id} notes={initialContent} />
+              <div className="mt-4 grid gap-3 text-sm">
+                {(flashcards ?? []).length === 0 ? (
+                  <div className="rounded-2xl bg-white p-3 text-xs text-[var(--muted)]">
+                    No flashcards yet.
+                  </div>
+                ) : (
+                  (flashcards ?? []).map((card) => (
+                    <div key={card.id} className="rounded-2xl bg-white p-3">
+                      <p className="font-semibold">{card.front}</p>
                       <p className="text-xs text-[var(--muted)]">Tap to reveal answer</p>
+                      <FlashcardReview
+                        courseId={params.courseId}
+                        topicId={topic.id}
+                        flashcardId={card.id}
+                      />
                     </div>
-                  ),
+                  ))
                 )}
               </div>
             </CardBody>
@@ -95,20 +139,25 @@ export default function TopicWorkspacePage() {
           <Card>
             <CardHeader>
               <CardTitle>Quizzes</CardTitle>
-              <button className="rounded-full bg-[color:var(--accent)] px-3 py-1 text-xs font-semibold text-white">
-                Generate Quiz
-              </button>
             </CardHeader>
             <CardBody>
-              <div className="grid gap-2 text-sm">
-                <div className="rounded-2xl bg-white p-3">
-                  <p className="font-semibold">Graph Theory Checkpoint</p>
-                  <p className="text-xs text-[var(--muted)]">8 questions · 75% avg</p>
-                </div>
-                <div className="rounded-2xl bg-white p-3">
-                  <p className="font-semibold">Shortest Paths Drill</p>
-                  <p className="text-xs text-[var(--muted)]">5 questions · 62% avg</p>
-                </div>
+              <QuizGenerator topicId={topic.id} topicTitle={topic.title} />
+              <QuizResultForm courseId={params.courseId} topicId={topic.id} quizzes={quizzes ?? []} />
+              <div className="mt-4 grid gap-2 text-sm">
+                {(quizzes ?? []).length === 0 ? (
+                  <div className="rounded-2xl bg-white p-3 text-xs text-[var(--muted)]">
+                    No quizzes yet.
+                  </div>
+                ) : (
+                  (quizzes ?? []).map((quiz, index) => (
+                    <div key={quiz.id} className="rounded-2xl bg-white p-3">
+                      <p className="font-semibold">Quiz {index + 1}</p>
+                      <p className="text-xs text-[var(--muted)]">
+                        {Array.isArray(quiz.questions) ? quiz.questions.length : 0} questions
+                      </p>
+                    </div>
+                  ))
+                )}
               </div>
             </CardBody>
           </Card>

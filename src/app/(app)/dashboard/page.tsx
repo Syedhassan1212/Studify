@@ -1,9 +1,12 @@
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/card";
 import Pill from "@/components/ui/pill";
 import ProgressBar from "@/components/ui/progress";
-import { courses, reviewQueue, studyStreak, tasks, weakTopics } from "@/lib/mock-data";
+import { getDashboardData } from "@/lib/study-data";
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const { courses, reviewQueue, studyStreak, tasks, weakTopics } =
+    await getDashboardData();
+
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
@@ -93,27 +96,35 @@ export default function DashboardPage() {
           </CardHeader>
           <CardBody>
             <div className="grid gap-4">
-              {courses.map((course) => (
-                <div key={course.id} className="rounded-2xl bg-white p-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <p className="text-lg font-semibold">{course.name}</p>
-                      <p className="text-sm text-[var(--muted)]">{course.description}</p>
-                    </div>
-                    <div className="rounded-full bg-[color:var(--surface-2)] px-3 py-1 text-xs font-semibold text-[var(--muted)]">
-                      {course.topicsCompleted}/{course.topicsTotal} topics
-                    </div>
-                  </div>
-                  <div className="mt-4">
-                    <ProgressBar value={course.progress} />
-                    <div className="mt-2 flex items-center justify-between text-xs text-[var(--muted)]">
-                      <span>{Math.round(course.progress * 100)}% complete</span>
-                      <span>{course.quizzesCompleted} quizzes done</span>
-                      <span>{course.nextReview}</span>
-                    </div>
-                  </div>
+              {courses.length === 0 ? (
+                <div className="rounded-2xl bg-white p-4 text-sm text-[var(--muted)]">
+                  No courses yet. Create your first course to start tracking progress.
                 </div>
-              ))}
+              ) : (
+                courses.map((course) => (
+                  <div key={course.id} className="rounded-2xl bg-white p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-lg font-semibold">{course.name}</p>
+                        <p className="text-sm text-[var(--muted)]">
+                          {course.description ?? "No description yet."}
+                        </p>
+                      </div>
+                      <div className="rounded-full bg-[color:var(--surface-2)] px-3 py-1 text-xs font-semibold text-[var(--muted)]">
+                        {course.topicsCompleted}/{course.topicsTotal} topics
+                      </div>
+                    </div>
+                    <div className="mt-4">
+                      <ProgressBar value={course.progress} />
+                      <div className="mt-2 flex items-center justify-between text-xs text-[var(--muted)]">
+                        <span>{Math.round(course.progress * 100)}% complete</span>
+                        <span>{course.quizzesCompleted} quizzes done</span>
+                        <span>{course.nextReview}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </CardBody>
         </Card>
@@ -125,18 +136,24 @@ export default function DashboardPage() {
             </CardHeader>
             <CardBody>
               <div className="grid gap-3">
-                {tasks.map((task) => (
-                  <div key={task.id} className="rounded-2xl bg-white p-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-semibold">{task.title}</p>
-                        <p className="text-xs text-[var(--muted)]">{task.course}</p>
-                      </div>
-                      <Pill label={task.type} type={task.type} />
-                    </div>
-                    <p className="mt-2 text-xs text-[var(--muted)]">{task.due}</p>
+                {tasks.length === 0 ? (
+                  <div className="rounded-2xl bg-white p-3 text-xs text-[var(--muted)]">
+                    No upcoming tasks yet.
                   </div>
-                ))}
+                ) : (
+                  tasks.map((task) => (
+                    <div key={task.id} className="rounded-2xl bg-white p-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-semibold">{task.title}</p>
+                          <p className="text-xs text-[var(--muted)]">{task.course ?? "No course"}</p>
+                        </div>
+                        <Pill label={task.type} type={task.type} />
+                      </div>
+                      <p className="mt-2 text-xs text-[var(--muted)]">{task.due}</p>
+                    </div>
+                  ))
+                )}
               </div>
             </CardBody>
           </Card>
@@ -147,22 +164,28 @@ export default function DashboardPage() {
             </CardHeader>
             <CardBody>
               <div className="grid gap-3">
-                {weakTopics.map((topic) => (
-                  <div key={topic.id} className="rounded-2xl bg-white p-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-semibold">{topic.title}</p>
-                        <p className="text-xs text-[var(--muted)]">{topic.course}</p>
-                      </div>
-                      <span className="rounded-full bg-[color:var(--surface-2)] px-3 py-1 text-xs font-semibold text-[var(--muted)]">
-                        {Math.round(topic.accuracy * 100)}% accuracy
-                      </span>
-                    </div>
-                    <p className="mt-2 text-xs text-[var(--muted)]">
-                      Last reviewed {topic.lastReviewed}
-                    </p>
+                {weakTopics.length === 0 ? (
+                  <div className="rounded-2xl bg-white p-3 text-xs text-[var(--muted)]">
+                    No weak topics yet. Complete a quiz to populate insights.
                   </div>
-                ))}
+                ) : (
+                  weakTopics.map((topic) => (
+                    <div key={topic.id} className="rounded-2xl bg-white p-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-semibold">{topic.title}</p>
+                          <p className="text-xs text-[var(--muted)]">{topic.course}</p>
+                        </div>
+                        <span className="rounded-full bg-[color:var(--surface-2)] px-3 py-1 text-xs font-semibold text-[var(--muted)]">
+                          {Math.round(topic.accuracy * 100)}% accuracy
+                        </span>
+                      </div>
+                      <p className="mt-2 text-xs text-[var(--muted)]">
+                        Last reviewed {topic.lastReviewed}
+                      </p>
+                    </div>
+                  ))
+                )}
               </div>
             </CardBody>
           </Card>
