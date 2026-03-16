@@ -21,9 +21,12 @@ export default async function CoursesPage() {
           >
             Open Course
           </Link>
-          <button className="rounded-full border border-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-[color:var(--accent)]">
+          <Link
+            href="/courses/new"
+            className="rounded-full border border-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-[color:var(--accent)]"
+          >
             Import Course
-          </button>
+          </Link>
           <Link
             href="/courses/new"
             className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-white"

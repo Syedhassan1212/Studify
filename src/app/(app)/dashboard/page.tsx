@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/card";
 import Pill from "@/components/ui/pill";
 import ProgressBar from "@/components/ui/progress";
@@ -20,12 +21,18 @@ export default async function DashboardPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <button className="rounded-full border border-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-[color:var(--accent)]">
+          <Link
+            href="/courses"
+            className="rounded-full border border-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-[color:var(--accent)]"
+          >
             Generate Quiz
-          </button>
-          <button className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-white">
+          </Link>
+          <Link
+            href="/courses"
+            className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-white"
+          >
             Upload Material
-          </button>
+          </Link>
         </div>
       </header>
 
@@ -69,17 +76,18 @@ export default async function DashboardPage() {
           <CardBody>
             <div className="grid gap-2">
               {[
-                "Create Course",
-                "Generate Flashcards",
-                "Summarize Notes",
-                "Start AI Study Session",
-              ].map((label) => (
-                <button
-                  key={label}
+                { label: "Create Course", href: "/courses/new" },
+                { label: "Generate Flashcards", href: "/courses" },
+                { label: "Summarize Notes", href: "/courses" },
+                { label: "Start AI Study Session", href: "/courses" },
+              ].map((action) => (
+                <Link
+                  key={action.label}
+                  href={action.href}
                   className="rounded-2xl bg-[color:var(--surface-2)] px-3 py-2 text-left text-sm font-semibold text-[color:var(--accent)]"
                 >
-                  {label}
-                </button>
+                  {action.label}
+                </Link>
               ))}
             </div>
           </CardBody>

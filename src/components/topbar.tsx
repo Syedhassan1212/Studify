@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Sparkles } from "lucide-react";
 
 export default function Topbar() {
@@ -14,13 +15,13 @@ export default function Topbar() {
           className="hidden w-full max-w-xs rounded-full bg-white px-4 py-2 text-sm text-[var(--muted)] shadow-inner md:block"
           placeholder="Search notes, materials, or questions..."
         />
-        <button
-          type="button"
+        <Link
+          href="/courses"
           className="flex items-center gap-2 rounded-full bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(27,58,75,0.2)]"
         >
           <Sparkles size={16} />
           Start AI Session
-        </button>
+        </Link>
       </div>
     </div>
   );

@@ -18,8 +18,8 @@ const navItems = [
 ];
 
 const actions = [
-  { label: "Create Course", icon: Sparkles },
-  { label: "Upload Material", icon: Upload },
+  { label: "Create Course", icon: Sparkles, href: "/courses/new" },
+  { label: "Upload Material", icon: Upload, href: "/courses" },
 ];
 
 export default function Sidebar() {
@@ -69,14 +69,14 @@ export default function Sidebar() {
           {actions.map((action) => {
             const Icon = action.icon;
             return (
-              <button
+              <Link
                 key={action.label}
-                type="button"
+                href={action.href}
                 className="flex items-center gap-3 rounded-2xl bg-white px-3 py-2 text-sm font-semibold text-[var(--accent)] shadow-[0_8px_18px_rgba(27,58,75,0.12)]"
               >
                 <Icon size={16} />
                 {action.label}
-              </button>
+              </Link>
             );
           })}
         </div>
