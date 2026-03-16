@@ -115,7 +115,12 @@ export async function uploadMaterial(_: unknown, formData: FormData) {
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
-  const filePath = `${user.id}/${topicId}/${uuidv4()}-${file.name}`;
+  const safeName = file.name
+    .normalize("NFKD")
+    .replace(/[^\w.\-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+  const filePath = `${user.id}/${topicId}/${uuidv4()}-${safeName || "material"}`;
   const admin = supabaseAdmin();
 
   const { error: uploadError } = await admin.storage
