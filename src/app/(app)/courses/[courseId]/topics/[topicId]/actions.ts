@@ -48,6 +48,8 @@ async function upsertNoteChunks({
 export async function saveNote(_: unknown, formData: FormData) {
   const topicId = String(formData.get("topicId") ?? "");
   const content = String(formData.get("content") ?? "").trim();
+  const contentHtml = String(formData.get("contentHtml") ?? "").trim();
+  const html = contentHtml || content;
 
   if (!topicId) {
     return { error: "Topic is required." };
@@ -65,7 +67,7 @@ export async function saveNote(_: unknown, formData: FormData) {
   if (existing?.id) {
     const { error } = await supabase
       .from("notes")
-      .update({ content: { text: content }, updated_at: new Date().toISOString() })
+      .update({ content: { text: content, html }, updated_at: new Date().toISOString() })
       .eq("id", existing.id);
     if (error) {
       return { error: error.message };
@@ -76,7 +78,7 @@ export async function saveNote(_: unknown, formData: FormData) {
   } else {
     const { data: created, error } = await supabase
       .from("notes")
-      .insert({ topic_id: topicId, content: { text: content } })
+      .insert({ topic_id: topicId, content: { text: content, html } })
       .select("id")
       .single();
     if (error) {
@@ -275,7 +277,12 @@ export async function importLatestMaterialToNotes(formData: FormData) {
   if (existing?.id) {
     const { error } = await supabase
       .from("notes")
-      .update({ content: { text: material.extracted_text }, updated_at: new Date().toISOString() })
+      .update(
+        {
+          content: { text: material.extracted_text, html: material.extracted_text },
+          updated_at: new Date().toISOString(),
+        },
+      )
       .eq("id", existing.id);
     if (error) {
       return { error: error.message };
@@ -283,7 +290,10 @@ export async function importLatestMaterialToNotes(formData: FormData) {
   } else {
     const { data: created, error } = await supabase
       .from("notes")
-      .insert({ topic_id: topicId, content: { text: material.extracted_text } })
+      .insert({
+        topic_id: topicId,
+        content: { text: material.extracted_text, html: material.extracted_text },
+      })
       .select("id")
       .single();
     if (error) {

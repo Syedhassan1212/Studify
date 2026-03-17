@@ -51,7 +51,11 @@ export default async function TopicWorkspacePage({
     ]);
 
   const initialContent =
-    typeof note?.content?.text === "string" ? note.content.text : "";
+    typeof note?.content?.html === "string"
+      ? note.content.html
+      : typeof note?.content?.text === "string"
+        ? note.content.text
+        : "";
 
   return (
     <div className="flex flex-col gap-6">
