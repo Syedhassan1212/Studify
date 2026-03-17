@@ -16,123 +16,122 @@ export default function NoteEditor({
   defaultValue?: string;
   onChange?: (value: string) => void;
 }) {
-  const [value, setValue] = useState(defaultValue);
+  const [draft, setDraft] = useState(defaultValue);
   const [mode, setMode] = useState<"edit" | "preview" | "split">("edit");
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
-    setValue(defaultValue);
+    setDraft(defaultValue);
+    if (textareaRef.current && textareaRef.current.value !== defaultValue) {
+      textareaRef.current.value = defaultValue;
+    }
   }, [defaultValue]);
 
-  const previewText = useMemo(() => value, [value]);
+  const previewText = useMemo(() => draft, [draft]);
   const wordCount = useMemo(() => {
-    const trimmed = value.trim();
+    const trimmed = draft.trim();
     if (!trimmed) return 0;
     return trimmed.split(/\s+/).length;
-  }, [value]);
+  }, [draft]);
 
-  const charCount = value.length;
+  const charCount = draft.length;
   const showEditor = mode !== "preview";
   const showPreview = mode !== "edit";
 
-  const commitValue = (nextValue: string, selection?: { start: number; end: number }) => {
-    setValue(nextValue);
+  const syncDraft = () => {
+    const nextValue = textareaRef.current?.value ?? "";
+    setDraft(nextValue);
     onChange?.(nextValue);
-    if (selection && textareaRef.current) {
-      requestAnimationFrame(() => {
-        textareaRef.current?.focus();
-        textareaRef.current?.setSelectionRange(selection.start, selection.end);
-      });
-    }
   };
 
-  const getSelection = () => {
+  const applyToTextarea = (updater: (textarea: HTMLTextAreaElement) => void) => {
     const textarea = textareaRef.current;
-    if (!textarea) return null;
-    return {
-      start: textarea.selectionStart ?? 0,
-      end: textarea.selectionEnd ?? 0,
-    };
+    if (!textarea) return;
+    updater(textarea);
+    setDraft(textarea.value);
+    onChange?.(textarea.value);
+    textarea.focus();
   };
 
   const insertSnippet = (snippet: string) => {
-    const selection = getSelection();
-    if (!selection) return;
-    const { start, end } = selection;
-    const nextValue = value.slice(0, start) + snippet + value.slice(end);
-    const cursor = start + snippet.length;
-    commitValue(nextValue, { start: cursor, end: cursor });
+    applyToTextarea((textarea) => {
+      const start = textarea.selectionStart ?? 0;
+      const end = textarea.selectionEnd ?? 0;
+      textarea.setRangeText(snippet, start, end, "end");
+    });
   };
 
   const wrapSelection = (before: string, after = before, placeholder = "text") => {
-    const selection = getSelection();
-    if (!selection) return;
-    const { start, end } = selection;
-    const selectedText = value.slice(start, end);
-    const insertText = selectedText || placeholder;
-    const nextValue =
-      value.slice(0, start) + before + insertText + after + value.slice(end);
-    const selectionStart = start + before.length;
-    const selectionEnd = selectionStart + insertText.length;
-    commitValue(nextValue, { start: selectionStart, end: selectionEnd });
+    applyToTextarea((textarea) => {
+      const start = textarea.selectionStart ?? 0;
+      const end = textarea.selectionEnd ?? 0;
+      const selectedText = textarea.value.slice(start, end);
+      const insertText = selectedText || placeholder;
+      const replacement = before + insertText + after;
+      textarea.setRangeText(replacement, start, end, "select");
+      const selectionStart = start + before.length;
+      const selectionEnd = selectionStart + insertText.length;
+      textarea.setSelectionRange(selectionStart, selectionEnd);
+    });
   };
 
   const prefixLines = (prefix: string) => {
-    const selection = getSelection();
-    if (!selection) return;
-    let { start, end } = selection;
-    if (start === end) {
-      const lineStart = value.lastIndexOf("\n", start - 1) + 1;
-      const lineEndIndex = value.indexOf("\n", start);
-      const lineEnd = lineEndIndex === -1 ? value.length : lineEndIndex;
-      const line = value.slice(lineStart, lineEnd);
-      if (line.length === 0) {
-        const nextValue = value.slice(0, start) + prefix + value.slice(end);
-        const cursor = start + prefix.length;
-        commitValue(nextValue, { start: cursor, end: cursor });
-        return;
+    applyToTextarea((textarea) => {
+      let start = textarea.selectionStart ?? 0;
+      let end = textarea.selectionEnd ?? 0;
+      if (start === end) {
+        const lineStart = textarea.value.lastIndexOf("\n", start - 1) + 1;
+        const lineEndIndex = textarea.value.indexOf("\n", start);
+        const lineEnd = lineEndIndex === -1 ? textarea.value.length : lineEndIndex;
+        const line = textarea.value.slice(lineStart, lineEnd);
+        if (line.length === 0) {
+          textarea.setRangeText(prefix, start, end, "end");
+          return;
+        }
+        start = lineStart;
+        end = lineEnd;
       }
-      start = lineStart;
-      end = lineEnd;
-    }
-    const block = value.slice(start, end);
-    const updated = block
-      .split("\n")
-      .map((line) => (line.length ? `${prefix}${line}` : line))
-      .join("\n");
-    const nextValue = value.slice(0, start) + updated + value.slice(end);
-    const cursor = start + updated.length;
-    commitValue(nextValue, { start: cursor, end: cursor });
+      const block = textarea.value.slice(start, end);
+      const updated = block
+        .split("\n")
+        .map((line) => (line.length ? `${prefix}${line}` : line))
+        .join("\n");
+      textarea.setRangeText(updated, start, end, "select");
+      const cursor = start + updated.length;
+      textarea.setSelectionRange(cursor, cursor);
+    });
   };
 
   const insertLink = () => {
-    const selection = getSelection();
-    if (!selection) return;
-    const { start, end } = selection;
-    const selectedText = value.slice(start, end);
-    const linkText = selectedText || "link text";
-    const urlPlaceholder = "https://";
-    const prefix = `[${linkText}](`;
-    const nextValue =
-      value.slice(0, start) + prefix + urlPlaceholder + ")" + value.slice(end);
-    const urlStart = start + prefix.length;
-    const urlEnd = urlStart + urlPlaceholder.length;
-    commitValue(nextValue, { start: urlStart, end: urlEnd });
+    applyToTextarea((textarea) => {
+      const start = textarea.selectionStart ?? 0;
+      const end = textarea.selectionEnd ?? 0;
+      const selectedText = textarea.value.slice(start, end);
+      const linkText = selectedText || "link text";
+      const urlPlaceholder = "https://";
+      const prefix = `[${linkText}](`;
+      const replacement = prefix + urlPlaceholder + ")";
+      textarea.setRangeText(replacement, start, end, "select");
+      const urlStart = start + prefix.length;
+      const urlEnd = urlStart + urlPlaceholder.length;
+      textarea.setSelectionRange(urlStart, urlEnd);
+    });
   };
 
   const insertCodeBlock = () => {
-    const selection = getSelection();
-    if (!selection) return;
-    const { start, end } = selection;
-    const selectedText = value.slice(start, end);
-    const insertText = selectedText || "code here";
-    const prefix = "```\n";
-    const suffix = "\n```";
-    const nextValue =
-      value.slice(0, start) + prefix + insertText + suffix + value.slice(end);
-    const selectionStart = start + prefix.length;
-    const selectionEnd = selectionStart + insertText.length;
-    commitValue(nextValue, { start: selectionStart, end: selectionEnd });
+    applyToTextarea((textarea) => {
+      const start = textarea.selectionStart ?? 0;
+      const end = textarea.selectionEnd ?? 0;
+      const selectedText = textarea.value.slice(start, end);
+      const insertText = selectedText || "code here";
+      const prefix = "```\n";
+      const suffix = "\n```";
+      const replacement = prefix + insertText + suffix;
+      textarea.setRangeText(replacement, start, end, "select");
+      const selectionStart = start + prefix.length;
+      const selectionEnd = selectionStart + insertText.length;
+      textarea.setSelectionRange(selectionStart, selectionEnd);
+    });
   };
 
   return (
@@ -268,12 +267,8 @@ export default function NoteEditor({
           <textarea
             ref={textareaRef}
             name={name}
-            value={value}
-            onChange={(event) => {
-              const nextValue = event.target.value;
-              setValue(nextValue);
-              onChange?.(nextValue);
-            }}
+            defaultValue={defaultValue}
+            onInput={syncDraft}
             onKeyDown={(event) => {
               if (event.key === "Tab") {
                 event.preventDefault();
@@ -286,7 +281,7 @@ export default function NoteEditor({
         ) : null}
         {showPreview ? (
           <div className="min-h-[260px] w-full rounded-2xl border border-[color:var(--surface-2)] bg-white px-3 py-2 text-sm leading-7 text-[var(--ink)]">
-            {!showEditor ? <input type="hidden" name={name} value={value} /> : null}
+            {!showEditor ? <input type="hidden" name={name} value={draft} /> : null}
             {previewText.trim().length === 0 ? (
               <p className="text-sm text-[var(--muted)]">No notes yet.</p>
             ) : (
