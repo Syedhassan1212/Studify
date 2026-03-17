@@ -34,16 +34,15 @@ export async function deleteTopic(formData: FormData) {
   const topicId = String(formData.get("topicId") ?? "");
 
   if (!courseId || !topicId) {
-    return { error: "Course and topic are required." };
+    return;
   }
 
   const supabase = await supabaseServer();
   const { error } = await supabase.from("topics").delete().eq("id", topicId);
 
   if (error) {
-    return { error: error.message };
+    throw new Error(error.message);
   }
 
   revalidatePath(`/courses/${courseId}`);
-  return { success: true };
 }
