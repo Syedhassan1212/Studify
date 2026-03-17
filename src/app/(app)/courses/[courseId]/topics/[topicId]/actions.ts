@@ -296,8 +296,7 @@ export async function importLatestMaterialToNotes(formData: FormData) {
 
   await markStudyActivity();
   revalidatePath(`/courses/${courseId}/topics/${topicId}`);
-<<<<<<< HEAD
 }
-=======
 
->>>>>>> 5b6cdcc4d973362d1ed5ff4699a3be5f1902bb5b
+
+
