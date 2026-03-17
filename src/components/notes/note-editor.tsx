@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -10,6 +10,10 @@ import TaskItem from "@tiptap/extension-task-item";
 import { cn } from "@/lib/utils";
 
 const stripHtml = (value: string) => value.replace(/<[^>]*>/g, "").trim();
+const countWords = (value: string) => {
+  const trimmed = value.trim();
+  return trimmed ? trimmed.split(/\s+/).length : 0;
+};
 
 const buttonBase =
   "rounded-full border border-[color:var(--surface-2)] px-3 py-1 text-xs font-semibold text-[var(--muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--accent)]";
@@ -27,9 +31,35 @@ export default function NoteEditor({
   defaultValue?: string;
   onChange?: (value: string) => void;
 }) {
-  const [textValue, setTextValue] = useState(() => stripHtml(defaultValue));
-  const [htmlValue, setHtmlValue] = useState(defaultValue);
-  const [lastInitial, setLastInitial] = useState(defaultValue);
+  const [wordCount, setWordCount] = useState(() => countWords(stripHtml(defaultValue)));
+  const textInputRef = useRef<HTMLInputElement | null>(null);
+  const htmlInputRef = useRef<HTMLInputElement | null>(null);
+  const lastInitialRef = useRef(defaultValue);
+  const wordCountTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const syncOutputs = useCallback(
+    (editorInstance: { getText: () => string; getHTML: () => string }) => {
+      const nextText = editorInstance.getText();
+      const nextHtml = editorInstance.getHTML();
+
+      if (textInputRef.current) {
+        textInputRef.current.value = nextText;
+      }
+      if (htmlInputRef.current) {
+        htmlInputRef.current.value = nextHtml;
+      }
+
+      if (wordCountTimerRef.current) {
+        clearTimeout(wordCountTimerRef.current);
+      }
+      wordCountTimerRef.current = setTimeout(() => {
+        setWordCount(countWords(nextText));
+      }, 120);
+
+      onChange?.(nextText);
+    },
+    [onChange],
+  );
 
   const editor = useEditor({
     extensions: [
@@ -58,34 +88,27 @@ export default function NoteEditor({
       },
     },
     onCreate: ({ editor }) => {
-      const nextText = editor.getText();
-      const nextHtml = editor.getHTML();
-      setTextValue(nextText);
-      setHtmlValue(nextHtml);
-      onChange?.(nextText);
+      syncOutputs(editor);
     },
     onUpdate: ({ editor }) => {
-      const nextText = editor.getText();
-      const nextHtml = editor.getHTML();
-      setTextValue(nextText);
-      setHtmlValue(nextHtml);
-      onChange?.(nextText);
+      syncOutputs(editor);
     },
   });
 
   useEffect(() => {
-    if (!editor || defaultValue === lastInitial) return;
+    if (!editor || defaultValue === lastInitialRef.current) return;
     editor.commands.setContent(defaultValue || "", false);
-    setTextValue(editor.getText());
-    setHtmlValue(editor.getHTML());
-    setLastInitial(defaultValue);
-  }, [defaultValue, editor, lastInitial]);
+    lastInitialRef.current = defaultValue;
+    syncOutputs(editor);
+  }, [defaultValue, editor, syncOutputs]);
 
-  const wordCount = useMemo(() => {
-    const trimmed = textValue.trim();
-    if (!trimmed) return 0;
-    return trimmed.split(/\s+/).length;
-  }, [textValue]);
+  useEffect(() => {
+    return () => {
+      if (wordCountTimerRef.current) {
+        clearTimeout(wordCountTimerRef.current);
+      }
+    };
+  }, []);
 
   const setLink = () => {
     if (!editor) return;
@@ -247,8 +270,8 @@ export default function NoteEditor({
         <EditorContent editor={editor} />
       </div>
 
-      <input type="hidden" name={name} value={textValue} />
-      <input type="hidden" name={htmlName} value={htmlValue} />
+      <input ref={textInputRef} type="hidden" name={name} defaultValue={stripHtml(defaultValue)} />
+      <input ref={htmlInputRef} type="hidden" name={htmlName} defaultValue={defaultValue} />
 
       <div className="mt-3 text-[11px] text-[var(--muted)]">
         Tip: use markdown-style shortcuts like **bold** or *italic* while typing.
