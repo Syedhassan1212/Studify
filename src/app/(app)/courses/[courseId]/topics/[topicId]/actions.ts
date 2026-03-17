@@ -248,9 +248,7 @@ export async function importLatestMaterialToNotes(formData: FormData) {
   const topicId = String(formData.get("topicId") ?? "");
   const courseId = String(formData.get("courseId") ?? "");
 
-  if (!topicId) {
-    return { error: "Topic is required." };
-  }
+  if (!topicId) return;
 
   const supabase = await supabaseServer();
   const { data: material } = await supabase
@@ -261,9 +259,7 @@ export async function importLatestMaterialToNotes(formData: FormData) {
     .limit(1)
     .maybeSingle();
 
-  if (!material?.extracted_text) {
-    return { error: "No processed material text found yet." };
-  }
+  if (!material?.extracted_text) return;
 
   const { data: existing } = await supabase
     .from("notes")
@@ -275,20 +271,15 @@ export async function importLatestMaterialToNotes(formData: FormData) {
 
   let noteId = existing?.id ?? "";
   if (existing?.id) {
-    const { error } = await supabase
+    await supabase
       .from("notes")
-      .update(
-        {
-          content: { text: material.extracted_text, html: material.extracted_text },
-          updated_at: new Date().toISOString(),
-        },
-      )
+      .update({
+        content: { text: material.extracted_text, html: material.extracted_text },
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", existing.id);
-    if (error) {
-      return { error: error.message };
-    }
   } else {
-    const { data: created, error } = await supabase
+    const { data: created } = await supabase
       .from("notes")
       .insert({
         topic_id: topicId,
@@ -296,22 +287,13 @@ export async function importLatestMaterialToNotes(formData: FormData) {
       })
       .select("id")
       .single();
-    if (error) {
-      return { error: error.message };
-    }
     noteId = created?.id ?? "";
   }
 
   if (noteId && material.extracted_text) {
-    await upsertNoteChunks({
-      supabase,
-      topicId,
-      noteId,
-      text: material.extracted_text,
-    });
+    await upsertNoteChunks({ supabase, topicId, noteId, text: material.extracted_text });
   }
 
   await markStudyActivity();
   revalidatePath(`/courses/${courseId}/topics/${topicId}`);
-  return { success: true };
 }
