@@ -7,17 +7,16 @@ export async function deleteCourse(formData: FormData) {
   const courseId = String(formData.get("courseId") ?? "");
 
   if (!courseId) {
-    return { error: "Course is required." };
+    return;
   }
 
   const supabase = await supabaseServer();
   const { error } = await supabase.from("courses").delete().eq("id", courseId);
 
   if (error) {
-    return { error: error.message };
+    throw new Error(error.message);
   }
 
   revalidatePath("/courses");
   revalidatePath("/dashboard");
-  return { success: true };
 }
